@@ -4,7 +4,7 @@ import checkToken from '../../middlewares/auth';
 
 const router = express.Router();
 
-router.post('/like/:postId', checkToken, controller.like);
-router.post('/dislike/:postId', checkToken, controller.dislike);
+router.put('/like/:postId', checkToken, controller.like);
+router.put('/dislike/:postId', checkToken, controller.dislike);
 
 export default router;
