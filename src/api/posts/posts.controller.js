@@ -1,4 +1,5 @@
-import { errorWrapper } from '../../services/helpers';
+import Joi from 'joi';
+import { errorWrapper, newError } from '../../services/helpers';
 import PostModel from './posts.model';
 
 export const getPosts = errorWrapper(async (_, res) => {
@@ -31,7 +32,36 @@ export const getPosts = errorWrapper(async (_, res) => {
     },
   ]);
 
-  res.status(201).json(posts);
+  res.status(201).json(posts[0]);
+});
+
+export const updatePost = errorWrapper(async (req, res) => {
+  const post = await PostModel.findById(req.params.postId);
+
+  if (!post) newError('Not found', 404);
+
+  if (req.user._id.toString() !== post.user.toString())
+    newError('Post edit forbiden for this user', 403);
+
+  const { error, value } = Joi.object({
+    title: Joi.string(),
+    desc: Joi.string(),
+    banner: Joi.string(),
+    tags: Joi.array().items(Joi.string()),
+    content: Joi.string(),
+  }).validate(req.body);
+
+  if (error) newError('Bad request', 400);
+
+  res
+    .status(201)
+    .json(
+      await PostModel.findByIdAndUpdate(
+        req.params.postId,
+        { $set: value },
+        { new: true },
+      ),
+    );
 });
 
 export const getSinglePosts = errorWrapper(async (req, res) => {
