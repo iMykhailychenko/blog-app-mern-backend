@@ -18,10 +18,10 @@ export const login = errorWrapper(async (req, res) => {
   const { email, password, remember } = req.body;
 
   const user = await UserModel.findOne({ email });
-  if (!user) throw newError('Wrong email or password', 401);
+  if (!user) throw newError('Wrong email or password', 400);
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) throw newError('Wrong email or password', 401);
+  if (!isPasswordValid) throw newError('Wrong email or password', 400);
 
   const token = await user.createToken(remember);
 
