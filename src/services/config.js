@@ -7,7 +7,7 @@ const config = {
     url: process.env.DB_URL,
   },
   auth: {
-    accesKey: process.env.ACCESS_KEY,
+    accessKey: process.env.ACCESS_KEY,
     salt: +process.env.SALT,
   },
 };

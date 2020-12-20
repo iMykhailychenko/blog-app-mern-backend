@@ -44,7 +44,7 @@ UserSchema.method('isPasswordValid', async function(password) {
 });
 
 UserSchema.method('createToken', async function(remember = false) {
-  const token = await jwt.sign({ id: this._id }, config.auth.accesKey);
+  const token = await jwt.sign({ id: this._id }, config.auth.accessKey);
 
   this.tokens = [
     ...this.tokens,

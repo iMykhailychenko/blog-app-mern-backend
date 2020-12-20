@@ -21,14 +21,14 @@ export const getPosts = errorWrapper(async (_, res) => {
       },
     },
     {
+      $project: { content: 0, user: 0, __v: 0 },
+    },
+    {
       $group: {
         _id: null,
         total: { $sum: 1 },
         posts: { $push: '$$ROOT' },
       },
-    },
-    {
-      $project: { user: 0, __v: 0 },
     },
   ]);
 
@@ -81,5 +81,14 @@ export const createPost = errorWrapper(async (req, res) => {
   req.user.posts.push(post._id);
   await req.user.save();
 
+  res.status(201).json(post);
+});
+
+export const uploadImg = errorWrapper(async (req, res) => {
+  const post = await PostModel.findById(req.params.postId);
+  post.banner = req.file.originalname;
+
+  // TODO save content images
+  await post.save();
   res.status(201).json(post);
 });

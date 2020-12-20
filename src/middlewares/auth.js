@@ -8,7 +8,7 @@ const checkToken = errorWrapper(async (req, _, next) => {
     req.get('Authorization') && req.get('Authorization').replace('Bearer ', '');
   if (!token) throw newError('No token provided', 401);
 
-  const { id } = await jwt.verify(token, config.auth.accesKey);
+  const { id } = await jwt.verify(token, config.auth.accessKey);
   if (!id) throw newError('Not authorized', 401);
 
   const user = await UserModel.findById(id);
