@@ -20,7 +20,7 @@ async function main() {
   morgan('tiny');
   app.use(cors());
   app.use(express.urlencoded({ extended: true }));
-  app.use(express.json({ limit: '50mb', extended: true }));
+  app.use(express.json());
 
   // routes
   app.use('/api/auth/', auth);
