@@ -22,4 +22,4 @@ https://mykh-blog.netlify.app/
 
 ## Frontend part repository
 
-https://github.com/iMykhailychenko/blog-app-mern-backend
+https://github.com/iMykhailychenko/blog-app-mern-frontend

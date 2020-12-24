@@ -3,7 +3,7 @@ import { newError } from '../../services/helpers';
 
 const PostSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  desc: { type: String, required: true },
+  desc: { type: String },
   banner: { type: String, default: null },
   tags: {
     type: Array,

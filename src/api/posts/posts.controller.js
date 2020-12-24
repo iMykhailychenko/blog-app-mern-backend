@@ -41,7 +41,7 @@ export const updatePost = errorWrapper(async (req, res) => {
   if (!post) newError('Not found', 404);
 
   if (req.user._id.toString() !== post.user.toString())
-    newError('Post edit forbiden for this user', 403);
+    newError('Post edit forbidden for this user', 403);
 
   const { error, value } = Joi.object({
     title: Joi.string(),
@@ -77,7 +77,6 @@ export const getSinglePosts = errorWrapper(async (req, res) => {
 
 export const createPost = errorWrapper(async (req, res) => {
   const post = await PostModel.create({ ...req.body, user: req.user._id });
-
   req.user.posts.push(post._id);
   await req.user.save();
 
