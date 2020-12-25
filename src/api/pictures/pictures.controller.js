@@ -12,7 +12,5 @@ export const getPictures = errorWrapper(async (req, res) => {
 
 export const randomPicture = errorWrapper(async (req, res) => {
   const num = Math.ceil(Math.random() * 10);
-  res
-    .status(200)
-    .json({ url: path.join(process.cwd(), 'static', `${num + 1}.jpeg`) });
+  res.status(200).send(path.join(process.cwd(), 'static', `${num + 1}.jpeg`));
 });

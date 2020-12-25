@@ -84,10 +84,9 @@ export const createPost = errorWrapper(async (req, res) => {
 });
 
 export const uploadImg = errorWrapper(async (req, res) => {
+  console.log(req.file);
   const post = await PostModel.findById(req.params.postId);
-  post.banner = req.file.originalname;
-
-  // TODO save content images
+  post.banner = req.file.filename;
   await post.save();
-  res.status(201).json(post);
+  res.status(201).json({ post: 'new' });
 });
