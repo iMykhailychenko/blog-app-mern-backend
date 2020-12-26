@@ -25,5 +25,5 @@ const pictures = [
 
 export const randomPicture = errorWrapper(async (req, res) => {
   const num = Math.ceil(Math.random() * 10);
-  res.status(200).send(pictures[num]);
+  res.status(200).send(pictures[num] || pictures[0]);
 });
