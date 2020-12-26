@@ -17,7 +17,7 @@ This repository is the server part of the application.
 
 ```To preview the page, follow the link below```
 
-https://mykh-blog.netlify.app/
+https://blog-eta-teal.vercel.app/
 
 
 ## Frontend part repository
