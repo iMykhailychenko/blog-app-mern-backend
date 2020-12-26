@@ -12,7 +12,7 @@ import feedback from './api/feedback/feedback.router';
 import pictures from './api/pictures/pictures.router';
 
 const app = express();
-const PORT = config.port || 3000;
+const PORT = config.port || 6000;
 
 async function main() {
   await connection.connect();
