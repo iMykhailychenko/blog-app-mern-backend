@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 const config = {
-  port: process.env.PORT,
+  port: process.env.PORT || 7000,
   db: {
     url: process.env.DB_URL,
   },

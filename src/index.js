@@ -9,10 +9,9 @@ import auth from './api/auth/auth.router';
 import users from './api/users/users.router';
 import posts from './api/posts/posts.router';
 import feedback from './api/feedback/feedback.router';
-import pictures from './api/pictures/pictures.router';
 
 const app = express();
-const PORT = config.port || 6000;
+const PORT = config.port;
 
 async function main() {
   await connection.connect();
@@ -27,7 +26,6 @@ async function main() {
   app.use('/api/users/', users);
   app.use('/api/posts/', posts);
   app.use('/api/feedback/', feedback);
-  app.use('/api/pictures/', pictures);
 
   // run server
   app.listen(PORT, () => console.log('Run on port:', PORT));
