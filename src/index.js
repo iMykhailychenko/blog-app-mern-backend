@@ -8,6 +8,7 @@ import config from './services/config';
 import auth from './api/auth/auth.router';
 import users from './api/users/users.router';
 import posts from './api/posts/posts.router';
+import comments from './api/comments/comments.router';
 import feedback from './api/feedback/feedback.router';
 
 const app = express();
@@ -25,6 +26,7 @@ async function main() {
   app.use('/api/auth/', auth);
   app.use('/api/users/', users);
   app.use('/api/posts/', posts);
+  app.use('/api/comments/', comments);
   app.use('/api/feedback/', feedback);
 
   // run server
