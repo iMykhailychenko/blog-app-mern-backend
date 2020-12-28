@@ -18,6 +18,7 @@ export const getComments = errorWrapper(async (req, res) => {
       $match: { parent: null },
     },
   ]);
+  // TODO add pagination
 
   res.status(201).json(comments);
 });
