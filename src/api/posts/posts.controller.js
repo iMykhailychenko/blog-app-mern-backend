@@ -17,11 +17,12 @@ export const getPosts = errorWrapper(async (_, res) => {
     },
     {
       $sort: {
-        view: 1,
+        top: -1,
+        date: -1,
       },
     },
     {
-      $project: { content: 0, user: 0, __v: 0 },
+      $project: { content: 0, user: 0, top: 0, __v: 0 },
     },
     {
       $group: {
@@ -69,6 +70,7 @@ export const getSinglePosts = errorWrapper(async (req, res) => {
 
   if (req.query.user && !post.feedback.view.includes(req.query.user)) {
     post.feedback.view.push(req.query.user);
+    post.top += 1;
     await post.save();
   }
 

@@ -16,7 +16,6 @@ export const registration = errorWrapper(async (req, res) => {
 
 export const login = errorWrapper(async (req, res) => {
   const { email, password, remember } = req.body;
-  console.log('login');
 
   const user = await UserModel.findOne({ email });
   if (!user) throw newError('Wrong email or password', 400);
