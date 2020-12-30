@@ -79,9 +79,6 @@ export const postComment = errorWrapper(async (req, res) => {
     attachment: (req.file && req.file.filename) || null,
   });
 
-  comment.author = [req.user];
-  comment.answers = [];
-
   res.status(201).json(comment);
 });
 
