@@ -20,6 +20,7 @@ const upload = multer({ storage }).single('attachment');
 router.get('/:postId', postIdValidate, controller.getComments);
 router.post('/:postId', checkToken, postIdValidate, upload, controller.postComment);
 router.delete('/:commentId', checkToken, controller.deleteComment);
+router.put('/:commentId', checkToken, upload, controller.editComment);
 router.post(
   '/:postId/:commentId',
   checkToken,

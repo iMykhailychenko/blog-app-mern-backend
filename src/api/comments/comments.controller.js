@@ -94,6 +94,22 @@ export const deleteComment = errorWrapper(async (req, res) => {
   res.status(201).send(comment);
 });
 
+export const editComment = errorWrapper(async (req, res) => {
+  const comment = await CommentModel.findById(req.params.commentId);
+  console.log(req.body.text);
+
+  // validate
+  if (!comment) throw newError('Not found', 404);
+  if (comment.user.toString() !== req.user._id.toString())
+    throw newError('Not permitted', 403);
+
+  comment.text = req.body.text;
+  comment.edited = Date.now();
+
+  await comment.save();
+  res.status(201).send(comment);
+});
+
 export const answerComment = errorWrapper(async (req, res) => {
   const parent = await CommentModel.findById(req.params.commentId);
   if (!parent) newError(`Not found comment with id: ${req.params.commentId}`, 404);
