@@ -13,3 +13,12 @@ export const newError = (message = '', code) => {
   err.code = code;
   return err;
 };
+
+export const generateTags = str => {
+  const arr = str
+    .trim()
+    .toLowerCase()
+    .split(' ');
+  const cutArr = arr.length > 15 ? arr.slice(0, 15) : arr;
+  return cutArr.map(item => (item.length > 15 ? item.slice(0, 25) : item));
+};

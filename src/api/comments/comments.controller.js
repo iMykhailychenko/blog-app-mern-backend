@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 
+import fs from 'fs';
+import path from 'path';
 import { errorWrapper, newError } from '../../services/helpers';
 import CommentModel from './comments.model';
 
@@ -83,29 +85,39 @@ export const postComment = errorWrapper(async (req, res) => {
 });
 
 export const deleteComment = errorWrapper(async (req, res) => {
+  const children = await CommentModel.find({ parent: req.params.commentId });
   const comment = await CommentModel.findById(req.params.commentId);
 
-  // validate
-  if (!comment) throw newError('Not found', 404);
-  if (comment.user.toString() !== req.user._id.toString())
-    throw newError('Not permitted', 403);
+  children.forEach(item => {
+    if (item && item.attachment) {
+      fs.unlink(path.join(process.cwd(), 'uploads', item.attachment), err => {
+        if (err) newError('Error with comment attachment', 500);
+      });
+    }
+  });
 
-  await comment.remove();
-  res.status(201).send(comment);
+  if (comment && comment.attachment) {
+    fs.unlink(path.join(process.cwd(), 'uploads', comment.attachment), err => {
+      if (err) newError('Error with comment attachment', 500);
+    });
+  }
+
+  await CommentModel.deleteMany({ parent: req.params.commentId });
+  await CommentModel.findByIdAndDelete(req.params.commentId);
+
+  res.status(200).send(comment);
 });
 
 export const editComment = errorWrapper(async (req, res) => {
   const comment = await CommentModel.findById(req.params.commentId);
-  console.log(req.body.text);
-
   // validate
   if (!comment) throw newError('Not found', 404);
   if (comment.user.toString() !== req.user._id.toString())
     throw newError('Not permitted', 403);
-
+  // write data
   comment.text = req.body.text;
   comment.edited = Date.now();
-
+  // action
   await comment.save();
   res.status(201).send(comment);
 });
@@ -113,7 +125,7 @@ export const editComment = errorWrapper(async (req, res) => {
 export const answerComment = errorWrapper(async (req, res) => {
   const parent = await CommentModel.findById(req.params.commentId);
   if (!parent) newError(`Not found comment with id: ${req.params.commentId}`, 404);
-
+  // action
   const answer = await CommentModel.create({
     text: req.body.text,
     user: req.user._id,
@@ -121,6 +133,5 @@ export const answerComment = errorWrapper(async (req, res) => {
     parent: parent._id,
     attachment: (req.file && req.file.filename) || null,
   });
-
   res.status(201).json(answer);
 });

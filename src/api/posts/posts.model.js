@@ -23,7 +23,6 @@ const PostSchema = new mongoose.Schema({
     dislike: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   },
   user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
-  comments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }],
 });
 
 export default mongoose.model('Post', PostSchema);

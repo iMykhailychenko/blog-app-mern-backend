@@ -1,10 +1,10 @@
-import { errorWrapper } from '../../services/helpers';
+import { errorWrapper, newError } from '../../services/helpers';
+import CommentModel from '../comments/comments.model';
 import PostModel from '../posts/posts.model';
 
-export const like = errorWrapper(async (req, res) => {
-  const { postId } = req.params;
+export const likePost = errorWrapper(async (req, res) => {
   const userId = req.user._id.toString();
-  const post = await PostModel.findById(postId);
+  const post = await PostModel.findById(req.params.postId);
 
   if (post.feedback.dislike.includes(userId)) {
     const dislikes = post.feedback.dislike.filter(id => id.toString() !== userId);
@@ -25,10 +25,9 @@ export const like = errorWrapper(async (req, res) => {
   res.status(201).json(post);
 });
 
-export const dislike = errorWrapper(async (req, res) => {
-  const { postId } = req.params;
+export const dislikePost = errorWrapper(async (req, res) => {
   const userId = req.user._id.toString();
-  const post = await PostModel.findById(postId);
+  const post = await PostModel.findById(req.params.postId);
 
   if (post.feedback.like.includes(userId)) {
     const likes = post.feedback.like.filter(id => id.toString() !== userId);
@@ -47,4 +46,52 @@ export const dislike = errorWrapper(async (req, res) => {
   post.feedback.dislike.push(userId);
   await post.save();
   res.status(201).json(post);
+});
+
+export const likeComment = errorWrapper(async (req, res) => {
+  const userId = req.user._id.toString();
+  const comment = await CommentModel.findById(req.params.commentId);
+  if (!comment) newError(`Not found comment with id: ${req.params.commentId}`, 404);
+
+  if (comment.feedback.dislike.includes(userId)) {
+    const dislikes = comment.feedback.dislike.filter(id => id.toString() !== userId);
+    comment.feedback.dislike = dislikes;
+  }
+
+  if (comment.feedback.like.includes(userId)) {
+    const likes = comment.feedback.like.filter(id => id.toString() !== userId);
+    comment.feedback.like = likes;
+    await comment.save();
+
+    res.status(201).json(comment);
+    return;
+  }
+
+  comment.feedback.like.push(userId);
+  await comment.save();
+  res.status(201).json(comment);
+});
+
+export const dislikeComment = errorWrapper(async (req, res) => {
+  const userId = req.user._id.toString();
+  const comment = await CommentModel.findById(req.params.commentId);
+  if (!comment) newError(`Not found comment with id: ${req.params.commentId}`, 404);
+
+  if (comment.feedback.like.includes(userId)) {
+    const likes = comment.feedback.like.filter(id => id.toString() !== userId);
+    comment.feedback.like = likes;
+  }
+
+  if (comment.feedback.dislike.includes(userId)) {
+    const dislikes = comment.feedback.dislike.filter(id => id.toString() !== userId);
+    comment.feedback.dislike = dislikes;
+    await comment.save();
+
+    res.status(201).json(comment);
+    return;
+  }
+
+  comment.feedback.dislike.push(userId);
+  await comment.save();
+  res.status(201).json(comment);
 });

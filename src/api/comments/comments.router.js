@@ -17,6 +17,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage }).single('attachment');
 
+// comment actions
 router.get('/:postId', postIdValidate, controller.getComments);
 router.post('/:postId', checkToken, postIdValidate, upload, controller.postComment);
 router.delete('/:commentId', checkToken, controller.deleteComment);

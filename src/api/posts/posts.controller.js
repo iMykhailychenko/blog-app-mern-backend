@@ -1,6 +1,9 @@
 import Joi from 'joi';
-import { errorWrapper, newError } from '../../services/helpers';
+import fs from 'fs';
+import path from 'path';
+import { errorWrapper, newError, generateTags } from '../../services/helpers';
 import PostModel from './posts.model';
+import CommentModel from '../comments/comments.model';
 
 export const getPosts = errorWrapper(async (_, res) => {
   const posts = await PostModel.aggregate([
@@ -55,7 +58,7 @@ export const updatePost = errorWrapper(async (req, res) => {
   if (error) newError('Bad request', 400);
 
   res
-    .status(201)
+    .status(200)
     .json(
       await PostModel.findByIdAndUpdate(
         req.params.postId,
@@ -74,21 +77,52 @@ export const getSinglePosts = errorWrapper(async (req, res) => {
     await post.save();
   }
 
-  res.status(201).json(post);
+  res.status(200).json(post);
 });
 
 export const createPost = errorWrapper(async (req, res) => {
-  const post = await PostModel.create({ ...req.body, user: req.user._id });
+  const post = await PostModel.create({
+    ...req.body,
+    tags: generateTags(req.body.tags),
+    banner: (req.file && req.file.filename) || null,
+    user: req.user._id,
+  });
   req.user.posts.push(post._id);
   await req.user.save();
 
   res.status(201).json(post);
 });
 
-export const uploadImg = errorWrapper(async (req, res) => {
-  console.log(req.file);
-  const post = await PostModel.findById(req.params.postId);
-  post.banner = req.file.filename;
-  await post.save();
-  res.status(201).json({ post: 'new' });
+export const deletePost = errorWrapper(async (req, res) => {
+  if (req.post.user.toString() !== req.user._id.toString())
+    newError('You dont have permission to delete this post', 403);
+
+  // clean uploads
+  if (req.post.banner) {
+    fs.unlink(path.join(process.cwd(), 'uploads', req.post.banner), err => {
+      if (err) newError('Error with comment attachment', 500);
+    });
+  }
+
+  // clean user info
+  req.user.posts = req.user.posts.filter(
+    item => item.toString() !== req.params.postId,
+  );
+  await req.user.save();
+
+  // clean comments
+  const comments = await CommentModel.find({ post: req.post._id });
+  comments.forEach(item => {
+    if (item && item.attachment) {
+      fs.unlink(path.join(process.cwd(), 'uploads', item.attachment), err => {
+        if (err) newError('Error with comment attachment', 500);
+      });
+    }
+  });
+  await CommentModel.deleteMany({ post: req.post._id });
+
+  // delete post
+  await req.post.delete();
+
+  res.status(200).send(req.post._id);
 });

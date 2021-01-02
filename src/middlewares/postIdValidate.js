@@ -5,6 +5,7 @@ const postIdValidate = errorWrapper(async (req, _, next) => {
   const post = await PostModel.findById(req.params.postId);
   if (!post) newError(`Not found post with id: ${req.params.postId}`, 404);
 
+  req.post = post;
   next();
 });
 
