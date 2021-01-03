@@ -50,7 +50,6 @@ export const updatePost = errorWrapper(async (req, res) => {
   const { error, value } = Joi.object({
     title: Joi.string(),
     desc: Joi.string(),
-    banner: Joi.string(),
     tags: Joi.array().items(Joi.string()),
     content: Joi.string(),
   }).validate(req.body);
@@ -62,7 +61,7 @@ export const updatePost = errorWrapper(async (req, res) => {
     .json(
       await PostModel.findByIdAndUpdate(
         req.params.postId,
-        { $set: value },
+        { $set: { ...value, edited: Date.now() } },
         { new: true },
       ),
     );

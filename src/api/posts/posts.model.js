@@ -5,6 +5,7 @@ const PostSchema = new mongoose.Schema({
   title: { type: String, required: true },
   desc: { type: String },
   top: { type: Number, default: 0 },
+  edited: { type: Date, default: null },
   banner: { type: String, default: null },
   tags: {
     type: Array,
