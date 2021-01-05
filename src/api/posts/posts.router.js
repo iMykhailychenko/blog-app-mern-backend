@@ -19,6 +19,7 @@ const upload = multer({ storage }).single('banner');
 
 router.get('/', controller.getPosts);
 router.get('/:postId', controller.getSinglePosts);
+router.get('/user/:userId', controller.getUserPosts);
 router.put('/:postId', checkToken, controller.updatePost);
 router.delete('/:postId', checkToken, postIdValidate, controller.deletePost);
 router.post('/', checkToken, upload, controller.createPost);

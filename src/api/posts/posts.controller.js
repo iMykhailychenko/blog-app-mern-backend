@@ -36,7 +36,14 @@ export const getPosts = errorWrapper(async (_, res) => {
     },
   ]);
 
+  // TODO pagination
   res.status(201).json(posts[0]);
+});
+
+export const getUserPosts = errorWrapper(async (req, res) => {
+  // TODO pagination
+  const posts = await PostModel.find({ user: req.params.userId });
+  res.status(201).json({ total: 10, posts });
 });
 
 export const updatePost = errorWrapper(async (req, res) => {
