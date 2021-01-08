@@ -10,6 +10,8 @@ const UserSchema = new mongoose.Schema({
   surname: { type: String, required: true },
   nick: { type: String, required: true },
   avatar: { type: String, default: null },
+  followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   feedback: {
     like: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     dislike: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

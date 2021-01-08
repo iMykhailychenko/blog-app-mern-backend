@@ -102,48 +102,48 @@ export const dislikeComment = errorWrapper(async (req, res) => {
 // USERS
 export const likeUser = errorWrapper(async (req, res) => {
   const userId = req.user._id.toString();
-  const user = await UserModel.findById(req.params.userId);
-  if (!user) newError(`Not found user with id: ${req.params.userId}`, 404);
+  const target = await UserModel.findById(req.params.userId);
+  if (!target) newError(`Not found user with id: ${req.params.userId}`, 404);
 
-  if (user.feedback.dislike.includes(userId)) {
-    const dislikes = user.feedback.dislike.filter(id => id.toString() !== userId);
-    user.feedback.dislike = dislikes;
+  if (target.feedback.dislike.includes(userId)) {
+    const dislikes = target.feedback.dislike.filter(id => id.toString() !== userId);
+    target.feedback.dislike = dislikes;
   }
 
-  if (user.feedback.like.includes(userId)) {
-    const likes = user.feedback.like.filter(id => id.toString() !== userId);
-    user.feedback.like = likes;
-    await user.save();
+  if (target.feedback.like.includes(userId)) {
+    const likes = target.feedback.like.filter(id => id.toString() !== userId);
+    target.feedback.like = likes;
+    await target.save();
 
-    res.status(201).json(user.feedback);
+    res.status(201).json(target.feedback);
     return;
   }
 
-  user.feedback.like.push(userId);
-  await user.save();
-  res.status(201).json(user.feedback);
+  target.feedback.like.push(userId);
+  await target.save();
+  res.status(201).json(target.feedback);
 });
 
 export const dislikeUser = errorWrapper(async (req, res) => {
   const userId = req.user._id.toString();
-  const user = await UserModel.findById(req.params.userId);
-  if (!user) newError(`Not found user with id: ${req.params.userId}`, 404);
+  const target = await UserModel.findById(req.params.userId);
+  if (!target) newError(`Not found user with id: ${req.params.userId}`, 404);
 
-  if (user.feedback.like.includes(userId)) {
-    const likes = user.feedback.like.filter(id => id.toString() !== userId);
-    user.feedback.like = likes;
+  if (target.feedback.like.includes(userId)) {
+    const likes = target.feedback.like.filter(id => id.toString() !== userId);
+    target.feedback.like = likes;
   }
 
-  if (user.feedback.dislike.includes(userId)) {
-    const dislikes = user.feedback.dislike.filter(id => id.toString() !== userId);
-    user.feedback.dislike = dislikes;
-    await user.save();
+  if (target.feedback.dislike.includes(userId)) {
+    const dislikes = target.feedback.dislike.filter(id => id.toString() !== userId);
+    target.feedback.dislike = dislikes;
+    await target.save();
 
-    res.status(201).json(user.feedback);
+    res.status(201).json(target.feedback);
     return;
   }
 
-  user.feedback.dislike.push(userId);
-  await user.save();
-  res.status(201).json(user.feedback);
+  target.feedback.dislike.push(userId);
+  await target.save();
+  res.status(201).json(target.feedback);
 });
