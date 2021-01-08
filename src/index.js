@@ -19,6 +19,7 @@ async function main() {
 
   morgan('tiny');
   app.use(cors());
+  app.use(express.static('uploads'));
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json({ limit: '10mb', extended: true }));
 

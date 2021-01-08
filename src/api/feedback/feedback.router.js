@@ -12,4 +12,8 @@ router.put('/dislike/:postId', checkToken, controller.dislikePost);
 router.put('/like/:commentId/comments', checkToken, controller.likeComment);
 router.put('/dislike/:commentId/comments', checkToken, controller.dislikeComment);
 
+// users
+router.put('/like/:userId/users', checkToken, controller.likeUser);
+router.put('/dislike/:userId/users', checkToken, controller.dislikeUser);
+
 export default router;

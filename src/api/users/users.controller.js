@@ -16,6 +16,7 @@ export const getUserById = errorWrapper(async (req, res) => {
         'nick',
         'email',
         'avatar',
+        'feedback',
       ]),
     );
 });
