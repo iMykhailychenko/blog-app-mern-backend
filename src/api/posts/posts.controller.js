@@ -62,7 +62,12 @@ export const updatePost = errorWrapper(async (req, res) => {
 });
 
 export const getSinglePosts = errorWrapper(async (req, res) => {
-  const post = await PostModel.findById(req.params.postId);
+  const post = await PostModel.findById(req.params.postId).populate('user', [
+    'avatar',
+    'name',
+    'surname',
+    'nick',
+  ]);
 
   if (req.query.user && !post.feedback.view.includes(req.query.user)) {
     post.feedback.view.push(req.query.user);
