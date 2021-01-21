@@ -1,35 +1,35 @@
 {
-  "name": "blog-app-mern-backend",
-  "version": "1.0.0",
-  "type": "module",
-  "main": "index.js",
-  "author": "Ihor Mykhailychenko",
-  "license": "ISC",
-  "scripts": {
-    "start": "node --es-module-specifier-resolution=node ./src/index.js",
-    "dev": "nodemon --es-module-specifier-resolution=node ./src/index.js",
-    "lint": "prettier --write './**/*.{js,json}' --config ./.prettierrc && eslint --fix ./",
-    "format": "prettier --write './**/*.{js,json}' --config ./.prettierrc"
-  },
-  "devDependencies": {
-    "eslint": "^5.13.0",
-    "eslint-config-airbnb-base": "^13.1.0",
-    "eslint-config-prettier": "^4.0.0",
-    "eslint-plugin-import": "^2.16.0",
-    "eslint-plugin-prettier": "^3.0.1",
-    "nodemon": "^2.0.3",
-    "prettier": "^1.16.4"
-  },
-  "dependencies": {
-    "bcrypt": "^5.0.0",
-    "cors": "^2.8.5",
-    "dotenv": "^8.2.0",
-    "express": "^4.17.1",
-    "joi": "^17.2.1",
-    "jsonwebtoken": "^8.5.1",
-    "mongoose": "^5.10.9",
-    "morgan": "^1.10.0",
-    "multer": "^1.4.2",
-    "yargs": "^15.3.1"
-  }
+    "name": "blog-app-mern-backend",
+    "version": "1.0.0",
+    "type": "module",
+    "main": "index.js",
+    "author": "Ihor Mykhailychenko",
+    "license": "ISC",
+    "scripts": {
+        "start": "node --es-module-specifier-resolution=node ./src/index.js",
+        "dev": "nodemon --es-module-specifier-resolution=node ./src/index.js",
+        "lint": "prettier --write './**/*.{js,json}' --config ./.prettierrc && eslint --fix ./",
+        "format": "prettier --write './**/*.{js,json}' --config ./.prettierrc"
+    },
+    "devDependencies": {
+        "eslint": "^5.13.0",
+        "eslint-config-airbnb-base": "^13.1.0",
+        "eslint-config-prettier": "^4.0.0",
+        "eslint-plugin-import": "^2.16.0",
+        "eslint-plugin-prettier": "^3.0.1",
+        "nodemon": "^2.0.3",
+        "prettier": "^1.16.4"
+    },
+    "dependencies": {
+        "bcrypt": "^5.0.0",
+        "cors": "^2.8.5",
+        "dotenv": "^8.2.0",
+        "express": "^4.17.1",
+        "joi": "^17.2.1",
+        "jsonwebtoken": "^8.5.1",
+        "mongoose": "^5.10.9",
+        "morgan": "^1.10.0",
+        "multer": "^1.4.2",
+        "yargs": "^15.3.1"
+    }
 }

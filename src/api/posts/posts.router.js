@@ -7,12 +7,12 @@ import postIdValidate from '../../middlewares/postIdValidate';
 const router = express.Router();
 
 const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename(req, file, cb) {
-    cb(null, `IMG_${Date.now()}_${file.originalname}`);
-  },
+    destination(req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename(req, file, cb) {
+        cb(null, `IMG_${Date.now()}_${file.originalname}`);
+    },
 });
 
 const upload = multer({ storage }).single('banner');

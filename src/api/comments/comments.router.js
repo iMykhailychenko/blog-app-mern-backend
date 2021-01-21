@@ -7,12 +7,12 @@ import postIdValidate from '../../middlewares/postIdValidate';
 const router = express.Router();
 
 const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename(req, file, cb) {
-    cb(null, `IMG_${Date.now()}_${file.originalname}`);
-  },
+    destination(req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename(req, file, cb) {
+        cb(null, `IMG_${Date.now()}_${file.originalname}`);
+    },
 });
 
 const upload = multer({ storage }).single('attachment');
@@ -22,12 +22,6 @@ router.get('/:postId', postIdValidate, controller.getComments);
 router.post('/:postId', checkToken, postIdValidate, upload, controller.postComment);
 router.delete('/:commentId', checkToken, controller.deleteComment);
 router.put('/:commentId', checkToken, upload, controller.editComment);
-router.post(
-  '/:postId/:commentId',
-  checkToken,
-  postIdValidate,
-  upload,
-  controller.answerComment,
-);
+router.post('/:postId/:commentId', checkToken, postIdValidate, upload, controller.answerComment);
 
 export default router;

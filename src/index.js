@@ -15,27 +15,27 @@ const app = express();
 const PORT = config.port;
 
 async function main() {
-  await connection.connect();
+    await connection.connect();
 
-  morgan('tiny');
-  app.use(cors());
-  app.use(express.static('uploads'));
-  app.use(express.urlencoded({ extended: true }));
-  app.use(express.json({ limit: '10mb', extended: true }));
+    morgan('tiny');
+    app.use(cors());
+    app.use(express.static('uploads'));
+    app.use(express.urlencoded({ extended: true }));
+    app.use(express.json({ limit: '10mb', extended: true }));
 
-  // routes
-  app.use('/api/auth/', auth);
-  app.use('/api/users/', users);
-  app.use('/api/posts/', posts);
-  app.use('/api/comments/', comments);
-  app.use('/api/feedback/', feedback);
+    // routes
+    app.use('/api/auth/', auth);
+    app.use('/api/users/', users);
+    app.use('/api/posts/', posts);
+    app.use('/api/comments/', comments);
+    app.use('/api/feedback/', feedback);
 
-  // run server
-  app.listen(PORT, () => console.log('Run on port:', PORT));
+    // run server
+    app.listen(PORT, () => console.log('Run on port:', PORT));
 
-  process.on('SIGILL', () => {
-    connection.close();
-  });
+    process.on('SIGILL', () => {
+        connection.close();
+    });
 }
 
 main().catch(console.error);
