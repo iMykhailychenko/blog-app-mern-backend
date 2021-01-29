@@ -12,6 +12,7 @@
     "prettier/prettier": "error",
     "no-console": "off",
     "class-methods-use-this": "off",
+    "prefer-destructuring": "off",
     "no-return-await": "off",
     "func-names": ["off"],
     "consistent-return": ["error", { "treatUndefinedAsUnspecified": true }],

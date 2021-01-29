@@ -118,3 +118,19 @@ export const deletePost = errorWrapper(async (req, res) => {
 
     res.status(200).send(req.post._id);
 });
+
+export const updatePostBanner = errorWrapper(async (req, res) => {
+    if (req.post.user.toString() !== req.user._id.toString())
+        newError('You dont have permission to delete this post', 403);
+
+    // clean uploads
+    if (req.post.banner) {
+        fs.unlink(path.join(process.cwd(), 'uploads', req.post.banner), err => {
+            if (err) newError('Error with comment attachment', 500);
+        });
+    }
+
+    req.post.banner = (req.file && req.file.filename) || null;
+    await req.post.save();
+    res.status(201).send(req.post.banner);
+});

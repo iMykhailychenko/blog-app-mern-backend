@@ -1,27 +1,17 @@
 import express from 'express';
-import multer from 'multer';
 import * as controller from './posts.controller';
 import checkToken from '../../middlewares/auth';
 import postIdValidate from '../../middlewares/postIdValidate';
+import config from '../../services/config';
 
 const router = express.Router();
-
-const storage = multer.diskStorage({
-    destination(req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename(req, file, cb) {
-        cb(null, `IMG_${Date.now()}_${file.originalname}`);
-    },
-});
-
-const upload = multer({ storage }).single('banner');
 
 router.get('/', controller.getPosts);
 router.get('/:postId', controller.getSinglePosts);
 router.get('/user/:userId', controller.getUserPosts);
 router.put('/:postId', checkToken, controller.updatePost);
 router.delete('/:postId', checkToken, postIdValidate, controller.deletePost);
-router.post('/', checkToken, upload, controller.createPost);
+router.post('/', checkToken, config.uploads.single('banner'), controller.createPost);
+router.put('/:postId/banner', checkToken, postIdValidate, config.uploads.single('banner'), controller.updatePostBanner);
 
 export default router;
