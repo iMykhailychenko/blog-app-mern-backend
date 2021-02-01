@@ -9,5 +9,6 @@ const router = express.Router();
 router.put('/avatar', checkToken, config.uploads.single('avatar'), controller.updateAvatar);
 router.put('/banner', checkToken, config.uploads.single('banner'), controller.updateBanner);
 router.put('/user', checkToken, controller.updateUser);
+router.put('/desc', checkToken, controller.aboutUser);
 
 export default router;

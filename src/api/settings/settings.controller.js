@@ -62,13 +62,18 @@ export const updateUser = errorWrapper(async (req, res) => {
         const { error } = Joi.string()
             .email()
             .validate(email);
-
         if (error) throw newError('Email is not valid', 422);
-
         user.email = email;
         user.nick = email.split('@')[0];
     }
 
     await user.save();
     res.status(201).json({ name: user.name, surname: user.surname, email: user.email, nick: user.nick });
+});
+
+export const aboutUser = errorWrapper(async (req, res) => {
+    const user = await UserModel.findOne(req.user._id);
+    user.desc = req.body.desc;
+    await user.save();
+    res.status(201).send(user.desc);
 });

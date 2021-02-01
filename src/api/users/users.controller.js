@@ -74,3 +74,49 @@ export const putFollowers = errorWrapper(async (req, res) => {
 
     res.status(201).json({ type: 'subscribe' });
 });
+
+export const searchFollowers = errorWrapper(async (req, res) => {
+    const page = req.query.page || 0;
+    const limit = req.query.limit || 15;
+
+    let pipeline = [
+        {
+            $project: {
+                posts: 0,
+                feedback: 0,
+                tokens: 0,
+                password: 0,
+                followers: 0,
+                following: 0,
+                __v: 0,
+            },
+        },
+        { $skip: page * limit },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: 1 },
+                followers: { $push: '$$ROOT' },
+            },
+        },
+    ];
+    if (req.query.q)
+        pipeline = [
+            {
+                $match: {
+                    $or: [
+                        { name: new RegExp(req.query.q, 'gi') },
+                        { surname: new RegExp(req.query.q, 'gi') },
+                        { nick: new RegExp(req.query.q, 'gi') },
+                    ],
+                },
+            },
+            {
+                $sort: { posts: -1 },
+            },
+            ...pipeline,
+        ];
+
+    const followers = await UserModel.aggregate(pipeline);
+    res.status(200).json(followers[0]);
+});

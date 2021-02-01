@@ -32,7 +32,19 @@ export const getPosts = errorWrapper(async (req, res) => {
         },
     ];
 
-    if (req.query.q) pipeline = [{ $match: { $text: { $search: req.query.q } } }, ...pipeline];
+    if (req.query.q)
+        pipeline = [
+            {
+                $match: {
+                    $or: [
+                        { title: new RegExp(req.query.q, 'gi') },
+                        { desc: new RegExp(req.query.q, 'gi') },
+                        { tags: new RegExp(req.query.q, 'gi') },
+                    ],
+                },
+            },
+            ...pipeline,
+        ];
 
     const posts = await PostModel.aggregate(pipeline);
 
