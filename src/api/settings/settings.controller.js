@@ -71,9 +71,9 @@ export const updateUser = errorWrapper(async (req, res) => {
     res.status(201).json({ name: user.name, surname: user.surname, email: user.email, nick: user.nick });
 });
 
-export const aboutUser = errorWrapper(async (req, res) => {
+export const updateBio = errorWrapper(async (req, res) => {
     const user = await UserModel.findOne(req.user._id);
-    user.desc = req.body.desc;
+    user.bio = req.body.bio;
     await user.save();
-    res.status(201).send(user.desc);
+    res.status(201).send(user.bio);
 });
