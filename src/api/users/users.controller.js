@@ -76,8 +76,8 @@ export const putFollowers = errorWrapper(async (req, res) => {
 });
 
 export const searchFollowers = errorWrapper(async (req, res) => {
-    const page = req.query.page || 0;
-    const limit = req.query.limit || 15;
+    const page = req.query.page - 1 || 0;
+    const limit = +req.query.limit || 15;
 
     let pipeline = [
         {
@@ -91,7 +91,15 @@ export const searchFollowers = errorWrapper(async (req, res) => {
                 __v: 0,
             },
         },
-        { $skip: page * limit },
+        {
+            $sort: { posts: -1 },
+        },
+        {
+            $skip: page * limit,
+        },
+        {
+            $limit: limit,
+        },
         {
             $group: {
                 _id: null,
@@ -100,6 +108,7 @@ export const searchFollowers = errorWrapper(async (req, res) => {
             },
         },
     ];
+
     if (req.query.q)
         pipeline = [
             {
@@ -110,9 +119,6 @@ export const searchFollowers = errorWrapper(async (req, res) => {
                         { nick: new RegExp(req.query.q, 'gi') },
                     ],
                 },
-            },
-            {
-                $sort: { posts: -1 },
             },
             ...pipeline,
         ];

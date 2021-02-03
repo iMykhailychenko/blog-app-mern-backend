@@ -5,6 +5,9 @@ import PostModel from './posts.model';
 import CommentModel from '../comments/comments.model';
 
 export const getPosts = errorWrapper(async (req, res) => {
+    const page = req.query.page - 1 || 0;
+    const limit = +req.query.limit || 15;
+
     let pipeline = [
         {
             $lookup: {
@@ -24,10 +27,9 @@ export const getPosts = errorWrapper(async (req, res) => {
             $project: { content: 0, user: 0, top: 0, __v: 0 },
         },
         {
-            $group: {
-                _id: null,
-                total: { $sum: 1 },
-                posts: { $push: '$$ROOT' },
+            $facet: {
+                pagination: [{ $count: 'total' }],
+                data: [{ $skip: page * limit }, { $limit: limit }],
             },
         },
     ];
@@ -47,9 +49,8 @@ export const getPosts = errorWrapper(async (req, res) => {
         ];
 
     const posts = await PostModel.aggregate(pipeline);
-
-    // TODO pagination
-    res.status(201).json(posts[0]);
+    const result = { posts: posts[0].data, total: posts[0].pagination[0].total };
+    res.status(201).json(result);
 });
 
 export const getUserPosts = errorWrapper(async (req, res) => {
