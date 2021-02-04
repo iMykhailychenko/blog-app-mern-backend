@@ -6,7 +6,10 @@
 .pnp.js
 .idea
 /.idea
+.vscode
 
+# access.log
+access.log
 
 # testing
 /coverage
