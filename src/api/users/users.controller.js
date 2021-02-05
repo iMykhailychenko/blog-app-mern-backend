@@ -91,15 +91,9 @@ export const searchFollowers = errorWrapper(async (req, res) => {
                 __v: 0,
             },
         },
-        {
-            $sort: { posts: -1 },
-        },
-        {
-            $skip: page * limit,
-        },
-        {
-            $limit: limit,
-        },
+        { $sort: { posts: -1 } },
+        { $skip: page * limit },
+        { $limit: limit },
         {
             $group: {
                 _id: null,

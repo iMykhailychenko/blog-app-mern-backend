@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import mongoose from 'mongoose';
 import { errorWrapper, newError, generateTags } from '../../services/helpers';
 import PostModel from './posts.model';
 import CommentModel from '../comments/comments.model';
@@ -15,17 +16,25 @@ export const getPosts = errorWrapper(async (req, res) => {
                 let: { userId: '$user' },
                 pipeline: [
                     { $match: { $expr: { $eq: ['$_id', '$$userId'] } } },
-                    { $project: { posts: 0, tokens: 0, password: 0, __v: 0 } },
+                    {
+                        $project: {
+                            posts: 0,
+                            feedback: 0,
+                            banner: 0,
+                            desc: 0,
+                            following: 0,
+                            followers: 0,
+                            tokens: 0,
+                            password: 0,
+                            __v: 0,
+                        },
+                    },
                 ],
                 as: 'author',
             },
         },
-        {
-            $sort: { top: -1, date: -1 },
-        },
-        {
-            $project: { content: 0, user: 0, top: 0, __v: 0 },
-        },
+        { $sort: { top: -1, date: -1 } },
+        { $project: { content: 0, user: 0, top: 0, __v: 0 } },
         {
             $facet: {
                 pagination: [{ $count: 'total' }],
@@ -49,14 +58,26 @@ export const getPosts = errorWrapper(async (req, res) => {
         ];
 
     const posts = await PostModel.aggregate(pipeline);
-    const result = { posts: posts[0].data, total: posts[0].pagination[0].total };
-    res.status(201).json(result);
+    res.status(201).json({ posts: posts[0].data, total: posts[0].pagination[0].total });
 });
 
 export const getUserPosts = errorWrapper(async (req, res) => {
-    // TODO pagination
-    const posts = await PostModel.find({ user: req.params.userId });
-    res.status(201).json({ total: 10, posts });
+    const page = req.query.page - 1 || 0;
+    const limit = +req.query.limit || 15;
+
+    const posts = await PostModel.aggregate([
+        { $match: { user: mongoose.Types.ObjectId(req.params.userId) } },
+        { $project: { content: 0, user: 0, top: 0, __v: 0 } },
+        { $sort: { date: -1 } },
+        {
+            $facet: {
+                pagination: [{ $count: 'total' }],
+                data: [{ $skip: page * limit }, { $limit: limit }],
+            },
+        },
+    ]);
+
+    res.status(201).json({ posts: posts[0].data, total: posts[0].pagination[0].total });
 });
 
 export const updatePost = errorWrapper(async (req, res) => {
