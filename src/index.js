@@ -1,11 +1,9 @@
 import express from 'express';
-import morgan from 'morgan';
 import cors from 'cors';
-import fs from 'fs';
 
-import * as path from 'path';
 import connection from './db/connection';
 import config from './services/config';
+import logger from './services/logger';
 
 import auth from './api/auth/auth.router';
 import users from './api/users/users.router';
@@ -17,22 +15,11 @@ import settings from './api/settings/settings.router';
 const app = express();
 const PORT = config.port;
 
-// logger config
-const stream = fs.createWriteStream(path.join(process.cwd(), 'access.log'), { flags: 'a' });
-morgan.token('auth', req => req.headers.authorization);
-
-const logger = morgan(
-    'info :method :url HTTP/:http-version \nwarning :status :referrer \nuser-agent: :user-agent \nauth: :auth\n',
-    {
-        stream,
-        skip: req => req.headers.accept.includes('image'),
-    },
-);
-
 async function main() {
     await connection.connect();
     // logger
-    app.use(logger);
+    logger.init();
+    app.use(logger.middleware);
 
     // middlewares
     app.use(cors());
