@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 import Joi from 'joi';
+import bcrypt from 'bcrypt';
 import { errorWrapper, newError } from '../../services/helpers';
 import UserModel from '../users/users.model';
 
@@ -76,4 +77,22 @@ export const updateBio = errorWrapper(async (req, res) => {
     user.bio = req.body.bio;
     await user.save();
     res.status(201).send(user.bio);
+});
+
+export const changePass = errorWrapper(async (req, res) => {
+    const { oldPass, newPass } = req.body;
+    const user = await UserModel.findOne(req.user._id);
+
+    const isPasswordValid = await bcrypt.compare(oldPass, user.password);
+    if (!isPasswordValid) throw newError('Wrong email or password', 400);
+
+    const { error } = Joi.string()
+        .pattern(/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[_#?!@$%^&*-]).{8,}$/)
+        .validate(newPass);
+
+    if (error) throw newError('Password is not valid', 422);
+
+    user.password = newPass;
+    await user.save();
+    res.status(204).send();
 });

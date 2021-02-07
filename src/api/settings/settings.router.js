@@ -10,5 +10,6 @@ router.put('/avatar', checkToken, config.uploads.single('avatar'), controller.up
 router.put('/banner', checkToken, config.uploads.single('banner'), controller.updateBanner);
 router.put('/user', checkToken, controller.updateUser);
 router.put('/bio', checkToken, controller.updateBio);
+router.put('/password', checkToken, controller.changePass);
 
 export default router;
