@@ -11,6 +11,7 @@ import posts from './api/posts/posts.router';
 import comments from './api/comments/comments.router';
 import feedback from './api/feedback/feedback.router';
 import settings from './api/settings/settings.router';
+import * as path from "path";
 
 const app = express();
 const PORT = config.port;
@@ -23,7 +24,7 @@ async function main() {
 
     // middlewares
     app.use(cors());
-    app.use(express.static('uploads'));
+    app.use(express.static(path.join(process.cwd(), 'uploads')));
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json({ limit: '10mb', extended: true }));
 
