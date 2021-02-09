@@ -121,7 +121,7 @@ export const searchFollowers = errorWrapper(async (req, res) => {
 
 export const searchFollowing = errorWrapper(async (req, res) => {
     const page = req.query.page - 1 || 0;
-    const limit = +req.query.limit || 15;
+    const limit = +req.query.limit || 14;
 
     let pipeline = [
         { $match: { followers: req.params.userId } },
