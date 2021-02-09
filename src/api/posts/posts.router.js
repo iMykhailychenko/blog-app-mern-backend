@@ -7,6 +7,7 @@ import config from '../../services/config';
 const router = express.Router();
 
 router.get('/', controller.getPosts);
+router.get('/top', controller.getTopPost);
 router.get('/:postId', controller.getSinglePosts);
 router.get('/user/:userId', controller.getUserPosts);
 router.put('/:postId', checkToken, controller.updatePost);

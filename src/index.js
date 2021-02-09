@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 
+import * as path from 'path';
 import connection from './db/connection';
 import config from './services/config';
 import logger from './services/logger';
@@ -11,7 +12,6 @@ import posts from './api/posts/posts.router';
 import comments from './api/comments/comments.router';
 import feedback from './api/feedback/feedback.router';
 import settings from './api/settings/settings.router';
-import * as path from "path";
 
 const app = express();
 const PORT = config.port;

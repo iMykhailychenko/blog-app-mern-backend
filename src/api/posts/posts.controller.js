@@ -61,6 +61,38 @@ export const getPosts = errorWrapper(async (req, res) => {
     res.status(201).json({ posts: posts[0].data, total: posts[0].pagination[0] ? posts[0].pagination[0].total : null });
 });
 
+export const getTopPost = errorWrapper(async (req, res) => {
+    const posts = await PostModel.aggregate([
+        {
+            $lookup: {
+                from: 'users',
+                let: { userId: '$user' },
+                pipeline: [
+                    { $match: { $expr: { $eq: ['$_id', '$$userId'] } } },
+                    {
+                        $project: {
+                            posts: 0,
+                            feedback: 0,
+                            banner: 0,
+                            desc: 0,
+                            following: 0,
+                            followers: 0,
+                            tokens: 0,
+                            password: 0,
+                            __v: 0,
+                        },
+                    },
+                ],
+                as: 'author',
+            },
+        },
+        { $sort: { top: -1, date: -1 } },
+        { $project: { content: 0, user: 0, top: 0, __v: 0 } },
+    ]);
+
+    res.status(201).json({ posts: posts[0].data, total: posts[0].pagination[0] ? posts[0].pagination[0].total : null });
+});
+
 export const getUserPosts = errorWrapper(async (req, res) => {
     const page = req.query.page - 1 || 0;
     const limit = +req.query.limit || 15;
