@@ -7,6 +7,7 @@ const router = express.Router();
 router.put('/followers/:userId', checkToken, controller.putFollowers);
 router.get('/profile/:userId', controller.getUserById);
 router.get('/profile/:userId/followers', controller.searchFollowers);
+router.get('/profile/:userId/following', controller.searchFollowing);
 router.get('/profile', checkToken, controller.getUser);
 
 export default router;

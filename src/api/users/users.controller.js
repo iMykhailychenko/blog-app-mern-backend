@@ -80,6 +80,7 @@ export const searchFollowers = errorWrapper(async (req, res) => {
     const limit = +req.query.limit || 15;
 
     let pipeline = [
+        { $match: { following: req.params.userId } },
         {
             $project: {
                 posts: 0,
@@ -92,13 +93,10 @@ export const searchFollowers = errorWrapper(async (req, res) => {
             },
         },
         { $sort: { posts: -1 } },
-        { $skip: page * limit },
-        { $limit: limit },
         {
-            $group: {
-                _id: null,
-                total: { $sum: 1 },
-                followers: { $push: '$$ROOT' },
+            $facet: {
+                pagination: [{ $count: 'total' }],
+                data: [{ $skip: page * limit }, { $limit: limit }],
             },
         },
     ];
@@ -119,4 +117,48 @@ export const searchFollowers = errorWrapper(async (req, res) => {
 
     const followers = await UserModel.aggregate(pipeline);
     res.status(200).json(followers[0]);
+});
+
+export const searchFollowing = errorWrapper(async (req, res) => {
+    const page = req.query.page - 1 || 0;
+    const limit = +req.query.limit || 15;
+
+    let pipeline = [
+        { $match: { followers: req.params.userId } },
+        {
+            $project: {
+                posts: 0,
+                feedback: 0,
+                tokens: 0,
+                password: 0,
+                followers: 0,
+                following: 0,
+                __v: 0,
+            },
+        },
+        { $sort: { posts: -1 } },
+        {
+            $facet: {
+                pagination: [{ $count: 'total' }],
+                data: [{ $skip: page * limit }, { $limit: limit }],
+            },
+        },
+    ];
+
+    if (req.query.q)
+        pipeline = [
+            {
+                $match: {
+                    $or: [
+                        { name: new RegExp(req.query.q, 'gi') },
+                        { surname: new RegExp(req.query.q, 'gi') },
+                        { nick: new RegExp(req.query.q, 'gi') },
+                    ],
+                },
+            },
+            ...pipeline,
+        ];
+
+    const following = await UserModel.aggregate(pipeline);
+    res.status(200).json(following[0]);
 });
