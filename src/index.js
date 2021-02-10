@@ -12,6 +12,7 @@ import posts from './api/posts/posts.router';
 import comments from './api/comments/comments.router';
 import feedback from './api/feedback/feedback.router';
 import settings from './api/settings/settings.router';
+import favorite from './api/favorite/favorite.router';
 
 const app = express();
 const PORT = config.port;
@@ -35,6 +36,7 @@ async function main() {
     app.use('/api/comments/', comments);
     app.use('/api/feedback/', feedback);
     app.use('/api/settings/', settings);
+    app.use('/api/favorite/', favorite);
 
     // run server
     app.listen(PORT, () => console.log('Run on port:', PORT));

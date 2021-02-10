@@ -34,7 +34,7 @@ export const getPosts = errorWrapper(async (req, res) => {
             },
         },
         { $sort: { top: -1, date: -1 } },
-        { $project: { content: 0, user: 0, top: 0, __v: 0 } },
+        { $project: { content: 0, favorite: 0, user: 0, top: 0, __v: 0 } },
         {
             $facet: {
                 pagination: [{ $count: 'total' }],
@@ -87,7 +87,7 @@ export const getTopPost = errorWrapper(async (req, res) => {
             },
         },
         { $sort: { top: -1, date: -1 } },
-        { $project: { content: 0, user: 0, top: 0, __v: 0 } },
+        { $project: { content: 0, favorite: 0, user: 0, top: 0, __v: 0 } },
     ]);
 
     res.status(201).json({ posts: posts[0].data, total: posts[0].pagination[0] ? posts[0].pagination[0].total : null });
@@ -99,7 +99,7 @@ export const getUserPosts = errorWrapper(async (req, res) => {
 
     const posts = await PostModel.aggregate([
         { $match: { user: mongoose.Types.ObjectId(req.params.userId) } },
-        { $project: { content: 0, user: 0, top: 0, __v: 0 } },
+        { $project: { content: 0, favorite: 0, user: 0, top: 0, __v: 0 } },
         { $sort: { date: -1 } },
         {
             $facet: {
@@ -187,7 +187,7 @@ export const deletePost = errorWrapper(async (req, res) => {
 
 export const updatePostBanner = errorWrapper(async (req, res) => {
     if (req.post.user.toString() !== req.user._id.toString())
-        newError('You dont have permission to delete this post', 403);
+        newError('You dont have permission to edit this post', 403);
 
     // clean uploads
     if (req.post.banner) {
