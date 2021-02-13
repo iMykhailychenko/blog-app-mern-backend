@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { $pagination, errorWrapper, newError } from '../../services/helpers';
+import { $addLVD, $pagination, errorWrapper, newError } from '../../services/helpers';
 import UserModel from './users.model';
 
 /*
@@ -38,6 +38,7 @@ export const getUserById = errorWrapper(async (req, res) => {
                 as: 'following',
             },
         },
+        $addLVD(req.params.userId, false),
         {
             $project: {
                 posts: 0,

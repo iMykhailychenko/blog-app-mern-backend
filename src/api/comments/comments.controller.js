@@ -44,7 +44,7 @@ export const getComments = errorWrapper(async (req, res) => {
         $pagination(page, limit),
     ]);
 
-    res.json(comments);
+    res.json({ comments: comments[0].data, total: comments[0].pagination[0] ? comments[0].pagination[0].total : null });
 });
 
 /*
@@ -80,7 +80,7 @@ export const postComment = errorWrapper(async (req, res) => {
  * */
 export const deleteComment = errorWrapper(async (req, res) => {
     const children = await CommentModel.find({ parent: req.params.commentId }, ['attachment']);
-    const comment = await CommentModel.findById(req.params.commentId, ['attachment']);
+    const comment = await CommentModel.findById(req.params.commentId, ['attachment', 'post']);
 
     children.forEach(item => {
         if (item && item.attachment) {
@@ -116,7 +116,7 @@ export const editComment = errorWrapper(async (req, res) => {
     await CommentModel.update(
         { _id: req.params.commentId, user: req.user._id },
         {
-            text: req.body.title,
+            text: req.body.text,
             edited: new Date(),
         },
     );
@@ -139,7 +139,7 @@ export const answerComment = errorWrapper(async (req, res) => {
         text: req.body.text,
         user: req.user._id,
         post: req.params.postId,
-        parent: mongoose.ObjectId(req.params.commentId),
+        parent: req.params.commentId,
         attachment: (req.file && req.file.filename) || null,
     });
     res.status(201).json(answer);
