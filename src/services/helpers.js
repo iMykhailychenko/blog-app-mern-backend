@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 import fs from 'fs';
 import path from 'path';
-import UserModel from '../api/users/users.model';
 
 /*
  * @navigation
