@@ -12,7 +12,8 @@ import UserModel from '../users/users.model';
  * */
 export const updateAvatar = errorWrapper(async (req, res) => {
     const file = (req.file && req.file.filename) || null;
-    await updateUserStatic(req.user.avatar, req.user._id, file, 'avatar');
+    await updateUserStatic(req.user.avatar);
+    await UserModel.update({ _id: req.user._id }, { avatar: file });
     res.status(201).send(file);
 });
 
@@ -25,7 +26,8 @@ export const updateAvatar = errorWrapper(async (req, res) => {
  * */
 export const updateBanner = errorWrapper(async (req, res) => {
     const file = (req.file && req.file.filename) || null;
-    await updateUserStatic(req.user.banner, req.user._id, file, 'banner');
+    await updateUserStatic(req.user.banner);
+    await UserModel.update({ _id: req.user._id }, { banner: file });
     res.status(201).send(file);
 });
 

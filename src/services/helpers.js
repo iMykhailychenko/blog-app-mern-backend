@@ -38,13 +38,12 @@ export const generateTags = str => {
 };
 
 // CONTROLLERS HELPERS
-export const updateUserStatic = async (banner, user, file, type) => {
-    if (banner) {
-        fs.unlink(path.join(process.cwd(), 'uploads', banner), err => {
+export const updateUserStatic = file => {
+    if (file) {
+        fs.unlink(path.join(process.cwd(), 'uploads', file), err => {
             if (err) newError('Error with file', 500);
         });
     }
-    await UserModel.update({ _id: user }, { [type]: file });
 };
 
 // AGGREGATION HELPERS
