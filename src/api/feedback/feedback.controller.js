@@ -1,149 +1,183 @@
-import { errorWrapper, newError } from '../../services/helpers';
+import mongoose from 'mongoose';
+
+import { $addLVD, errorWrapper, newError } from '../../services/helpers';
 import CommentModel from '../comments/comments.model';
 import PostModel from '../posts/posts.model';
 import UserModel from '../users/users.model';
 
-// POSTS
+/*
+ * @desc local helper for
+ * @auth - required
+ *
+ * @params {postId} - post id
+ * */
+const handleLike = async (model, req, res, id) => {
+    const target = await model.aggregate([
+        { $match: { _id: mongoose.Types.ObjectId(id) } },
+        $addLVD(req.user._id),
+        { $project: { content: 0, desc: 0, user: 0, __v: 0 } },
+    ]);
+
+    // stop if no content
+    if (target[0]) throw newError(`No post with id: ${id}`, 404);
+
+    // if user have left dislike before
+    if (target[0].feedback.isDisliked) {
+        await model.update(
+            { _id: mongoose.Types.ObjectId(id) },
+            {
+                $pull: { 'feedback.dislike': mongoose.Types.ObjectId(req.user._id) },
+                $push: { 'feedback.like': mongoose.Types.ObjectId(req.user._id) },
+            },
+        );
+        res.status(201).json({
+            ...target[0].feedback,
+            isLiked: 1,
+            isDisliked: 0,
+            like: target[0].feedback.like + 1,
+            dislike: target[0].feedback.dislike - 1,
+        });
+        return;
+    }
+    // if user have left like before
+    if (target[0].feedback.isLiked) {
+        await model.update(
+            { _id: mongoose.Types.ObjectId(id) },
+            { $push: { 'feedback.like': mongoose.Types.ObjectId(req.user._id) } },
+        );
+        res.status(201).json({
+            ...target[0].feedback,
+            isLiked: 0,
+            like: target[0].feedback.like - 1,
+        });
+        return;
+    }
+    // no likes from user before
+    await model.update(
+        { _id: mongoose.Types.ObjectId(id) },
+        { $pull: { 'feedback.like': mongoose.Types.ObjectId(req.user._id) } },
+    );
+    res.status(201).json({
+        ...target[0].feedback,
+        isLiked: 1,
+        like: target[0].feedback.like + 1,
+    });
+};
+
+const handleDislike = async (model, req, res, id) => {
+    const target = await model.aggregate([
+        { $match: { _id: mongoose.Types.ObjectId(id) } },
+        $addLVD(req.user._id),
+        { $project: { content: 0, desc: 0, user: 0, __v: 0 } },
+    ]);
+    // stop if no content
+    if (target[0]) throw newError(`No post with id: ${id}`, 404);
+
+    // if user have left like before
+    if (target[0].feedback.isLiked) {
+        await model.update(
+            { _id: mongoose.Types.ObjectId(id) },
+            {
+                $pull: { 'feedback.like': mongoose.Types.ObjectId(req.user._id) },
+                $push: { 'feedback.dislike': mongoose.Types.ObjectId(req.user._id) },
+            },
+        );
+        res.status(201).json({
+            ...target[0].feedback,
+            isLiked: 0,
+            isDisliked: 1,
+            dislike: target[0].feedback.dislike + 1,
+            like: target[0].feedback.like - 1,
+        });
+        return;
+    }
+    // if user have left dislike before
+    if (target[0].feedback.isDisliked) {
+        await model.update(
+            { _id: mongoose.Types.ObjectId(id) },
+            { $push: { 'feedback.dislike': mongoose.Types.ObjectId(req.user._id) } },
+        );
+        res.status(201).json({
+            ...target[0].feedback,
+            isDisliked: 0,
+            dislike: target[0].feedback.dislike - 1,
+        });
+        return;
+    }
+    // no likes from user before
+    await model.update(
+        { _id: mongoose.Types.ObjectId(id) },
+        { $pull: { 'feedback.dislike': mongoose.Types.ObjectId(req.user._id) } },
+    );
+    res.status(201).json({
+        ...target[0].feedback,
+        isDisliked: 1,
+        dislike: target[0].feedback.dislike + 1,
+    });
+};
+
+/*
+ * @PUT
+ * @desc put like on certain post, toggle it or invert dislike to like
+ * @auth - required
+ *
+ * @params {postId} - post id
+ * */
 export const likePost = errorWrapper(async (req, res) => {
-    const userId = req.user._id.toString();
-    const post = await PostModel.findById(req.params.postId);
-
-    if (post.feedback.dislike.includes(userId)) {
-        const dislikes = post.feedback.dislike.filter(id => id.toString() !== userId);
-        post.feedback.dislike = dislikes;
-    }
-
-    if (post.feedback.like.includes(userId)) {
-        const likes = post.feedback.like.filter(id => id.toString() !== userId);
-        post.feedback.like = likes;
-        await post.save();
-
-        res.status(201).json(post);
-        return;
-    }
-
-    post.feedback.like.push(userId);
-    await post.save();
-    res.status(201).json(post);
+    await handleLike(PostModel, req, res, req.params.postId);
 });
 
+/*
+ * @PUT
+ * @desc put dislike on certain post, toggle it or convert like to dislike
+ * @auth - required
+ *
+ * @params {postId} - post id
+ * */
 export const dislikePost = errorWrapper(async (req, res) => {
-    const userId = req.user._id.toString();
-    const post = await PostModel.findById(req.params.postId);
-
-    if (post.feedback.like.includes(userId)) {
-        const likes = post.feedback.like.filter(id => id.toString() !== userId);
-        post.feedback.like = likes;
-    }
-
-    if (post.feedback.dislike.includes(userId)) {
-        const dislikes = post.feedback.dislike.filter(id => id.toString() !== userId);
-        post.feedback.dislike = dislikes;
-        await post.save();
-
-        res.status(201).json(post);
-        return;
-    }
-
-    post.feedback.dislike.push(userId);
-    await post.save();
-    res.status(201).json(post);
+    await handleDislike(PostModel, req, res, req.params.postId);
 });
 
-// COMMENTS
+/*
+ * @PUT
+ * @desc put like on certain comment, toggle it or convert dislike to like
+ * @auth - required
+ *
+ * @params {commentId} - comment id
+ * */
 export const likeComment = errorWrapper(async (req, res) => {
-    const userId = req.user._id.toString();
-    const comment = await CommentModel.findById(req.params.commentId);
-    if (!comment) newError(`Not found comment with id: ${req.params.commentId}`, 404);
-
-    if (comment.feedback.dislike.includes(userId)) {
-        const dislikes = comment.feedback.dislike.filter(id => id.toString() !== userId);
-        comment.feedback.dislike = dislikes;
-    }
-
-    if (comment.feedback.like.includes(userId)) {
-        const likes = comment.feedback.like.filter(id => id.toString() !== userId);
-        comment.feedback.like = likes;
-        await comment.save();
-
-        res.status(201).json(comment);
-        return;
-    }
-
-    comment.feedback.like.push(userId);
-    await comment.save();
-    res.status(201).json(comment);
+    await handleLike(CommentModel, req, res, req.params.commentId);
 });
 
+/*
+ * @PUT
+ * @desc put dislike on certain comment, toggle it or convert like to dislike
+ * @auth - required
+ *
+ * @params {commentId} - comment id
+ * */
 export const dislikeComment = errorWrapper(async (req, res) => {
-    const userId = req.user._id.toString();
-    const comment = await CommentModel.findById(req.params.commentId);
-    if (!comment) newError(`Not found comment with id: ${req.params.commentId}`, 404);
-
-    if (comment.feedback.like.includes(userId)) {
-        const likes = comment.feedback.like.filter(id => id.toString() !== userId);
-        comment.feedback.like = likes;
-    }
-
-    if (comment.feedback.dislike.includes(userId)) {
-        const dislikes = comment.feedback.dislike.filter(id => id.toString() !== userId);
-        comment.feedback.dislike = dislikes;
-        await comment.save();
-
-        res.status(201).json(comment);
-        return;
-    }
-
-    comment.feedback.dislike.push(userId);
-    await comment.save();
-    res.status(201).json(comment);
+    await handleDislike(CommentModel, req, res, req.params.commentId);
 });
 
-// USERS
+/*
+ * @PUT
+ * @desc put like on user profile, toggle it or convert dislike to like
+ * @auth - required
+ *
+ * @params {userId} - user id
+ * */
 export const likeUser = errorWrapper(async (req, res) => {
-    const userId = req.user._id.toString();
-    const target = await UserModel.findById(req.params.userId);
-    if (!target) newError(`Not found user with id: ${req.params.userId}`, 404);
-
-    if (target.feedback.dislike.includes(userId)) {
-        const dislikes = target.feedback.dislike.filter(id => id.toString() !== userId);
-        target.feedback.dislike = dislikes;
-    }
-
-    if (target.feedback.like.includes(userId)) {
-        const likes = target.feedback.like.filter(id => id.toString() !== userId);
-        target.feedback.like = likes;
-        await target.save();
-
-        res.status(201).json(target.feedback);
-        return;
-    }
-
-    target.feedback.like.push(userId);
-    await target.save();
-    res.status(201).json(target.feedback);
+    await handleLike(UserModel, req, res, req.params.userId);
 });
 
+/*
+ * @PUT
+ * @desc put dislike on user profile, toggle it or convert like to dislike
+ * @auth - required
+ *
+ * @params {userId} - user id
+ * */
 export const dislikeUser = errorWrapper(async (req, res) => {
-    const userId = req.user._id.toString();
-    const target = await UserModel.findById(req.params.userId);
-    if (!target) newError(`Not found user with id: ${req.params.userId}`, 404);
-
-    if (target.feedback.like.includes(userId)) {
-        const likes = target.feedback.like.filter(id => id.toString() !== userId);
-        target.feedback.like = likes;
-    }
-
-    if (target.feedback.dislike.includes(userId)) {
-        const dislikes = target.feedback.dislike.filter(id => id.toString() !== userId);
-        target.feedback.dislike = dislikes;
-        await target.save();
-
-        res.status(201).json(target.feedback);
-        return;
-    }
-
-    target.feedback.dislike.push(userId);
-    await target.save();
-    res.status(201).json(target.feedback);
+    await handleDislike(UserModel, req, res, req.params.userId);
 });

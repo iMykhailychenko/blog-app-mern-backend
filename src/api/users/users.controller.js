@@ -1,12 +1,24 @@
 import mongoose from 'mongoose';
-import { errorWrapper, newError } from '../../services/helpers';
+import { $pagination, errorWrapper, newError } from '../../services/helpers';
 import UserModel from './users.model';
 
+/*
+ * @GET
+ * @desc get general user info
+ * @auth - required
+ * */
 export const getUser = errorWrapper(async (req, res) => {
     const { _id, email, name, surname, nick, avatar } = req.user;
     res.status(200).json({ _id, name, surname, nick, email, avatar });
 });
 
+/*
+ * @GET
+ * @desc get all user info by id
+ * @auth - not required
+ *
+ * @params {userId} - user id
+ * */
 export const getUserById = errorWrapper(async (req, res) => {
     const user = await UserModel.aggregate([
         { $match: { _id: mongoose.Types.ObjectId(req.params.userId) } },
@@ -48,11 +60,18 @@ export const getUserById = errorWrapper(async (req, res) => {
         },
     ]);
 
-    res.status(200).json(user);
+    res.json(user);
 });
 
+/*
+ * @PUT
+ * @desc subscribe/unsubscribe on user updates
+ * @auth - required
+ *
+ * @params {userId} - user id
+ * */
 export const putFollowers = errorWrapper(async (req, res) => {
-    const target = await UserModel.findById(req.params.userId);
+    const target = await UserModel.findById(req.params.userId, ['following', 'followers']);
     if (!target) newError(`Not found user with id: ${req.params.userId}`, 404);
 
     if (req.user.following.includes(req.params.userId)) {
@@ -75,90 +94,88 @@ export const putFollowers = errorWrapper(async (req, res) => {
     res.status(201).json({ type: 'subscribe' });
 });
 
+/*
+ * @desc local helper that create pipeline array as it almost the sema for next endpoints
+ *
+ * @param type - type of request 'following'|'followers'
+ * @param user - user id
+ * @param page - page for pagination
+ * @param limit - limit for pagination
+ * */
+const $searchPipeline = (type, user, page, limit) => [
+    { $match: { [type]: user } },
+    {
+        $project: {
+            posts: 0,
+            feedback: 0,
+            tokens: 0,
+            password: 0,
+            followers: 0,
+            following: 0,
+            __v: 0,
+        },
+    },
+    { $sort: { posts: -1 } },
+    $pagination(page, limit),
+];
+
+/*
+ * @desc local helper that create pipeline array for search query
+ *
+ * @param query - type of request 'following'|'followers'
+ * */
+const $searchQuery = query => [
+    {
+        $match: {
+            $or: [
+                { name: new RegExp(query, 'gi') },
+                { surname: new RegExp(query, 'gi') },
+                { nick: new RegExp(query, 'gi') },
+            ],
+        },
+    },
+];
+
+/*
+ * @GET
+ * @desc search who user follows
+ * @auth - required
+ *
+ * @params {userId} - user id
+ *
+ * @query {page} - current page/pagination
+ * @query {limit} - posts per page/pagination
+ * @query {q} - search query
+ * */
 export const searchFollowers = errorWrapper(async (req, res) => {
     const page = req.query.page - 1 || 0;
     const limit = +req.query.limit || 15;
 
-    let pipeline = [
-        { $match: { following: req.params.userId } },
-        {
-            $project: {
-                posts: 0,
-                feedback: 0,
-                tokens: 0,
-                password: 0,
-                followers: 0,
-                following: 0,
-                __v: 0,
-            },
-        },
-        { $sort: { posts: -1 } },
-        {
-            $facet: {
-                pagination: [{ $count: 'total' }],
-                data: [{ $skip: page * limit }, { $limit: limit }],
-            },
-        },
-    ];
-
-    if (req.query.q)
-        pipeline = [
-            {
-                $match: {
-                    $or: [
-                        { name: new RegExp(req.query.q, 'gi') },
-                        { surname: new RegExp(req.query.q, 'gi') },
-                        { nick: new RegExp(req.query.q, 'gi') },
-                    ],
-                },
-            },
-            ...pipeline,
-        ];
+    let pipeline = $searchPipeline('following', req.params.userId, page, limit);
+    if (req.query.q) pipeline = [...$searchQuery(req.query.q), ...pipeline];
 
     const followers = await UserModel.aggregate(pipeline);
-    res.status(200).json(followers[0]);
+    res.json(followers[0]);
 });
 
+/*
+ * @GET
+ * @desc search user followers
+ * @auth - required
+ *
+ * @params {userId} - user id
+ *
+ * @query {page} - current page/pagination
+ * @query {limit} - posts per page/pagination
+ * @query {q} - search query
+ * */
 export const searchFollowing = errorWrapper(async (req, res) => {
     const page = req.query.page - 1 || 0;
     const limit = +req.query.limit || 14;
 
-    let pipeline = [
-        { $match: { followers: req.params.userId } },
-        {
-            $project: {
-                posts: 0,
-                feedback: 0,
-                tokens: 0,
-                password: 0,
-                followers: 0,
-                following: 0,
-                __v: 0,
-            },
-        },
-        { $sort: { posts: -1 } },
-        {
-            $facet: {
-                pagination: [{ $count: 'total' }],
-                data: [{ $skip: page * limit }, { $limit: limit }],
-            },
-        },
-    ];
-
-    if (req.query.q)
-        pipeline = [
-            {
-                $match: {
-                    $or: [
-                        { name: new RegExp(req.query.q, 'gi') },
-                        { surname: new RegExp(req.query.q, 'gi') },
-                        { nick: new RegExp(req.query.q, 'gi') },
-                    ],
-                },
-            },
-            ...pipeline,
-        ];
+    let pipeline = $searchPipeline('followers', req.params.userId, page, limit);
+    if (req.query.q) pipeline = [...$searchQuery(req.query.q), ...pipeline];
 
     const following = await UserModel.aggregate(pipeline);
-    res.status(200).json(following[0]);
+    res.json(following[0]);
 });

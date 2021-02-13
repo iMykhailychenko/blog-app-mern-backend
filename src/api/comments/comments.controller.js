@@ -1,78 +1,62 @@
-import mongoose from 'mongoose';
-
 import fs from 'fs';
 import path from 'path';
-import { errorWrapper, newError } from '../../services/helpers';
+import mongoose from 'mongoose';
+
+import { errorWrapper, newError, $addLVD, $pagination, $lookupUser } from '../../services/helpers';
 import CommentModel from './comments.model';
 
+/*
+ * @GET
+ * @desc get nested comments list for certain post
+ * @auth - not required
+ * @sort - date
+ *
+ * @params {postId} - post id
+ *
+ * @query {page} - current page/pagination
+ * @query {limit} - posts per page/pagination
+ * */
 export const getComments = errorWrapper(async (req, res) => {
+    const page = req.query.page - 1 || 0;
+    const limit = +req.query.limit || 15;
+
     const comments = await CommentModel.aggregate([
         { $match: { post: mongoose.Types.ObjectId(req.params.postId) } },
-        {
-            $lookup: {
-                from: 'users',
-                let: { userId: '$user' },
-                pipeline: [
-                    { $match: { $expr: { $eq: ['$_id', '$$userId'] } } },
-                    { $project: { posts: 0, tokens: 0, password: 0, comments: 0, __v: 0 } },
-                ],
-                as: 'author',
-            },
-        },
+        $lookupUser(),
         {
             $lookup: {
                 from: 'comments',
                 let: { id: '$_id' },
                 pipeline: [
                     { $match: { $expr: { $eq: ['$parent', '$$id'] } } },
-                    {
-                        $lookup: {
-                            from: 'users',
-                            let: { userId: '$user' },
-                            pipeline: [
-                                { $match: { $expr: { $eq: ['$_id', '$$userId'] } } },
-                                {
-                                    $project: {
-                                        posts: 0,
-                                        tokens: 0,
-                                        password: 0,
-                                        comments: 0,
-                                        __v: 0,
-                                    },
-                                },
-                            ],
-                            as: 'author',
-                        },
-                    },
+                    $lookupUser(),
+                    $addLVD(req.query.user, false),
+                    { $sort: { date: -1 } },
                     { $project: { posts: 0, tokens: 0, password: 0, comments: 0, __v: 0 } },
                 ],
                 as: 'answers',
             },
         },
-        {
-            $match: { parent: null },
-        },
-        {
-            $project: { user: 0, __v: 0 },
-        },
-        {
-            $sort: {
-                date: -1,
-            },
-        },
-        {
-            $group: {
-                _id: null,
-                total: { $sum: 1 },
-                comments: { $push: '$$ROOT' },
-            },
-        },
+        { $match: { parent: null } },
+        $addLVD(req.query.user, false),
+        { $project: { user: 0, __v: 0 } },
+        { $sort: { date: -1 } },
+        $pagination(page, limit),
     ]);
-    // TODO add pagination
 
-    res.status(200).json(comments);
+    res.json(comments);
 });
 
+/*
+ * @POST
+ * @desc create new comment
+ * @auth - required
+ *
+ * @body {text} - comment text
+ * @body {attachment} - comment images
+ *
+ * @params {postId} - post id
+ * */
 export const postComment = errorWrapper(async (req, res) => {
     const comment = await CommentModel.create({
         text: req.body.text,
@@ -84,9 +68,19 @@ export const postComment = errorWrapper(async (req, res) => {
     res.status(201).json(comment);
 });
 
+/*
+ * @DELETE
+ * @desc delete comment
+ * @auth - required
+ *
+ * @body {text} - post text
+ * @body {attachment} - post images
+ *
+ * @params {postId} - post id
+ * */
 export const deleteComment = errorWrapper(async (req, res) => {
-    const children = await CommentModel.find({ parent: req.params.commentId });
-    const comment = await CommentModel.findById(req.params.commentId);
+    const children = await CommentModel.find({ parent: req.params.commentId }, ['attachment']);
+    const comment = await CommentModel.findById(req.params.commentId, ['attachment']);
 
     children.forEach(item => {
         if (item && item.attachment) {
@@ -105,31 +99,47 @@ export const deleteComment = errorWrapper(async (req, res) => {
     await CommentModel.deleteMany({ parent: req.params.commentId });
     await CommentModel.findByIdAndDelete(req.params.commentId);
 
-    res.status(200).send(comment);
-});
-
-export const editComment = errorWrapper(async (req, res) => {
-    const comment = await CommentModel.findById(req.params.commentId);
-    // validate
-    if (!comment) throw newError('Not found', 404);
-    if (comment.user.toString() !== req.user._id.toString()) throw newError('Not permitted', 403);
-    // write data
-    comment.text = req.body.text;
-    comment.edited = Date.now();
-    // action
-    await comment.save();
     res.status(201).send(comment);
 });
 
+/*
+ * @PUT
+ * @desc edit comment
+ * @auth - required
+ *
+ * @body {text} - post text
+ * @body {attachment} - post images
+ *
+ * @params {commentId} - comment id
+ * */
+export const editComment = errorWrapper(async (req, res) => {
+    await CommentModel.update(
+        { _id: req.params.commentId, user: req.user._id },
+        {
+            text: req.body.title,
+            edited: new Date(),
+        },
+    );
+    res.status(201).json({ _id: req.params.commentId });
+});
+
+/*
+ * @POST
+ * @desc answer comment
+ * @auth - required
+ *
+ * @body {text} - post text
+ * @body {attachment} - post images
+ *
+ * @params {postId} - post id for comment ref
+ * @params {commentId} - parent comment id
+ * */
 export const answerComment = errorWrapper(async (req, res) => {
-    const parent = await CommentModel.findById(req.params.commentId);
-    if (!parent) newError(`Not found comment with id: ${req.params.commentId}`, 404);
-    // action
     const answer = await CommentModel.create({
         text: req.body.text,
         user: req.user._id,
         post: req.params.postId,
-        parent: parent._id,
+        parent: mongoose.ObjectId(req.params.commentId),
         attachment: (req.file && req.file.filename) || null,
     });
     res.status(201).json(answer);

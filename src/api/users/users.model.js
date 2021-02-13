@@ -50,7 +50,6 @@ UserSchema.method('isPasswordValid', async function(password) {
 
 UserSchema.method('createToken', async function(remember = false) {
     const token = await jwt.sign({ id: this._id }, config.auth.accessKey);
-
     this.tokens = [
         ...this.tokens,
         {
@@ -58,9 +57,7 @@ UserSchema.method('createToken', async function(remember = false) {
             expires: new Date().getTime() + (remember ? 7 : 1) * 24 * 60 * 60 * 1000,
         },
     ];
-
     await this.save();
-
     return token;
 });
 

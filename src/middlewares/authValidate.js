@@ -7,7 +7,7 @@ const authValidate = errorWrapper(async (req, _, next) => {
         .validate(req.body.password);
 
     if (error) throw newError('Password is not valid', 422);
-    next();
+    return next();
 });
 
 export default authValidate;

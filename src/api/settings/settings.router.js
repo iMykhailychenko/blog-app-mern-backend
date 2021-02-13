@@ -1,15 +1,15 @@
 import express from 'express';
 
 import * as controller from './settings.controller';
-import checkToken from '../../middlewares/auth';
+import auth from '../../middlewares/auth';
 import config from '../../services/config';
 
 const router = express.Router();
 
-router.put('/avatar', checkToken, config.uploads.single('avatar'), controller.updateAvatar);
-router.put('/banner', checkToken, config.uploads.single('banner'), controller.updateBanner);
-router.put('/user', checkToken, controller.updateUser);
-router.put('/bio', checkToken, controller.updateBio);
-router.put('/password', checkToken, controller.changePass);
+router.put('/avatar', auth, config.uploads.single('avatar'), controller.updateAvatar);
+router.put('/banner', auth, config.uploads.single('banner'), controller.updateBanner);
+router.put('/user', auth, controller.updateUser);
+router.put('/bio', auth, controller.updateBio);
+router.put('/password', auth, controller.changePass);
 
 export default router;

@@ -1,46 +1,33 @@
 import fs from 'fs';
 import path from 'path';
 import mongoose from 'mongoose';
-import { errorWrapper, newError, generateTags } from '../../services/helpers';
+
 import PostModel from './posts.model';
 import CommentModel from '../comments/comments.model';
+import UserModel from '../users/users.model';
+import { errorWrapper, newError, generateTags, $lookupUser, $addLVD, $pagination } from '../../services/helpers';
 
+/*
+ * @GET
+ * @desc - get all posts with preview information and author data / can be used for search
+ * @sort - by review count and date of publication
+ * @auth - optional
+ *
+ * @query {page} - current page/pagination
+ * @query {limit} - posts per page/pagination
+ * @query {user} - user id if user is authenticated
+ * @query {q} - search query
+ * */
 export const getPosts = errorWrapper(async (req, res) => {
     const page = req.query.page - 1 || 0;
     const limit = +req.query.limit || 15;
 
     let pipeline = [
-        {
-            $lookup: {
-                from: 'users',
-                let: { userId: '$user' },
-                pipeline: [
-                    { $match: { $expr: { $eq: ['$_id', '$$userId'] } } },
-                    {
-                        $project: {
-                            posts: 0,
-                            feedback: 0,
-                            banner: 0,
-                            desc: 0,
-                            following: 0,
-                            followers: 0,
-                            tokens: 0,
-                            password: 0,
-                            __v: 0,
-                        },
-                    },
-                ],
-                as: 'author',
-            },
-        },
-        { $sort: { top: -1, date: -1 } },
-        { $project: { content: 0, favorite: 0, user: 0, top: 0, __v: 0 } },
-        {
-            $facet: {
-                pagination: [{ $count: 'total' }],
-                data: [{ $skip: page * limit }, { $limit: limit }],
-            },
-        },
+        $lookupUser(),
+        $addLVD(req.query.user),
+        { $sort: { 'feedback.view': -1, 'feedback.like': -1 } },
+        { $project: { content: 0, user: 0, __v: 0 } },
+        $pagination(page, limit),
     ];
 
     if (req.query.q)
@@ -58,87 +45,93 @@ export const getPosts = errorWrapper(async (req, res) => {
         ];
 
     const posts = await PostModel.aggregate(pipeline);
-    res.status(201).json({ posts: posts[0].data, total: posts[0].pagination[0] ? posts[0].pagination[0].total : null });
+    res.json({ posts: posts[0].data, total: posts[0].pagination[0] ? posts[0].pagination[0].total : null });
 });
 
-export const getTopPost = errorWrapper(async (req, res) => {
-    const posts = await PostModel.aggregate([
-        {
-            $lookup: {
-                from: 'users',
-                let: { userId: '$user' },
-                pipeline: [
-                    { $match: { $expr: { $eq: ['$_id', '$$userId'] } } },
-                    {
-                        $project: {
-                            posts: 0,
-                            feedback: 0,
-                            banner: 0,
-                            desc: 0,
-                            following: 0,
-                            followers: 0,
-                            tokens: 0,
-                            password: 0,
-                            __v: 0,
-                        },
-                    },
-                ],
-                as: 'author',
-            },
-        },
-        { $sort: { top: -1, date: -1 } },
-        { $project: { content: 0, favorite: 0, user: 0, top: 0, __v: 0 } },
-    ]);
-
-    res.status(201).json({ posts: posts[0].data, total: posts[0].pagination[0] ? posts[0].pagination[0].total : null });
-});
-
+/*
+ * @GET
+ * @desc - get all posts related to certain user
+ * @sort - by date of publication
+ * @auth - required
+ *
+ * @params {userId} - user id
+ *
+ * @query {page} - current page/pagination
+ * @query {limit} - posts per page/pagination
+ * */
 export const getUserPosts = errorWrapper(async (req, res) => {
     const page = req.query.page - 1 || 0;
     const limit = +req.query.limit || 15;
 
     const posts = await PostModel.aggregate([
         { $match: { user: mongoose.Types.ObjectId(req.params.userId) } },
-        { $project: { content: 0, favorite: 0, user: 0, top: 0, __v: 0 } },
+        $addLVD(req.params.userId),
+        { $project: { content: 0, user: 0, __v: 0 } },
         { $sort: { date: -1 } },
-        {
-            $facet: {
-                pagination: [{ $count: 'total' }],
-                data: [{ $skip: page * limit }, { $limit: limit }],
-            },
-        },
+        $pagination(page, limit),
     ]);
 
-    res.status(201).json({ posts: posts[0].data, total: posts[0].pagination[0].total });
+    res.json({ posts: posts[0].data, total: posts[0].pagination[0].total });
 });
 
+/*
+ * @PUT
+ * @desc update user post
+ * @auth - required
+ *
+ * @body {title: string} - post title
+ * @body {desc: string} - post desc
+ * @body {tags: string[]} - post tags
+ * @body {content: string} - post content
+ *
+ * @params {postId} - post id
+ * */
 export const updatePost = errorWrapper(async (req, res) => {
-    const post = await PostModel.findById(req.params.postId);
-
-    if (!post) newError('Not found', 404);
-    if (req.user._id.toString() !== post.user.toString()) newError('Post edit forbidden for this user', 403);
-
-    post.title = req.body.title;
-    post.desc = req.body.desc;
-    post.tags = req.body.tags;
-    post.content = req.body.content;
-    await post.save();
-
-    res.status(200).json(post);
+    await PostModel.update(
+        { _id: req.params.postId, user: req.user._id },
+        {
+            title: req.body.title,
+            desc: req.body.desc,
+            tags: req.body.tags,
+            content: req.body.content,
+            edited: new Date(),
+        },
+    );
+    res.status(201).json({ _id: req.params.postId });
 });
 
+/*
+ * @GET
+ * @desc get detail post view and push view into post Model if client is authenticated
+ * @auth - optional
+ *
+ * @params {postId} - post id
+ * */
 export const getSinglePosts = errorWrapper(async (req, res) => {
-    const post = await PostModel.findById(req.params.postId).populate('user', ['avatar', 'name', 'surname', 'nick']);
+    const posts = await PostModel.aggregate([
+        { $match: { _id: mongoose.Types.ObjectId(req.params.postId) } },
+        $lookupUser(),
+        $addLVD(req.query.user),
+        { $project: { user: 0, __v: 0 } },
+    ]);
 
-    if (req.query.user && !post.feedback.view.includes(req.query.user)) {
-        post.feedback.view.push(req.query.user);
-        post.top += 1;
-        await post.save();
+    if (req.query.user && posts[0] && !posts[0].feedback.isViewed) {
+        await PostModel.update(
+            { _id: mongoose.Types.ObjectId(req.params.postId) },
+            { $push: { 'feedback.view': mongoose.Types.ObjectId(req.query.user) } },
+        );
     }
 
-    res.status(200).json(post);
+    res.json(posts[0] || {});
 });
 
+/*
+ * @POST
+ * @desc create new post
+ * @auth - required
+ *
+ * @params {postId} - post id
+ * */
 export const createPost = errorWrapper(async (req, res) => {
     const post = await PostModel.create({
         ...req.body,
@@ -147,12 +140,17 @@ export const createPost = errorWrapper(async (req, res) => {
         user: req.user._id,
     });
 
-    req.user.posts.push(post._id);
-    await req.user.save();
-
+    await UserModel.update({ _id: req.user._id }, { $push: { posts: mongoose.Types.ObjectId(post._id) } });
     res.status(201).json(post);
 });
 
+/*
+ * @DELETE
+ * @desc delete post
+ * @auth - required
+ *
+ * @params {postId} - post id
+ * */
 export const deletePost = errorWrapper(async (req, res) => {
     if (req.post.user.toString() !== req.user._id.toString())
         newError('You dont have permission to delete this post', 403);
@@ -169,22 +167,30 @@ export const deletePost = errorWrapper(async (req, res) => {
     await req.user.save();
 
     // clean comments
-    const comments = await CommentModel.find({ post: req.post._id });
-    comments.forEach(item => {
-        if (item && item.attachment) {
-            fs.unlink(path.join(process.cwd(), 'uploads', item.attachment), err => {
-                if (err) newError('Error with comment attachment', 500);
-            });
-        }
-    });
+    const comments = await CommentModel.find({ post: req.post._id }, ['attachment']);
+    if (comments.length) {
+        comments.forEach(item => {
+            if (item && item.attachment) {
+                fs.unlink(path.join(process.cwd(), 'uploads', item.attachment), err => {
+                    if (err) newError('Error with comment attachment', 500);
+                });
+            }
+        });
+    }
     await CommentModel.deleteMany({ post: req.post._id });
 
     // delete post
     await req.post.delete();
-
-    res.status(200).send(req.post._id);
+    res.status(201).send(req.post._id);
 });
 
+/*
+ * @PUT
+ * @desc handle post banner actions update/delete
+ * @auth - required
+ *
+ * @params {postId} - post id
+ * */
 export const updatePostBanner = errorWrapper(async (req, res) => {
     if (req.post.user.toString() !== req.user._id.toString())
         newError('You dont have permission to edit this post', 403);

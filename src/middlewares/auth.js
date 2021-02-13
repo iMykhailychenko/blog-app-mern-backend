@@ -3,7 +3,7 @@ import { errorWrapper, newError } from '../services/helpers';
 import UserModel from '../api/users/users.model';
 import config from '../services/config';
 
-const checkToken = errorWrapper(async (req, _, next) => {
+const auth = errorWrapper(async (req, _, next) => {
     const token = req.get('Authorization') && req.get('Authorization').replace('Bearer ', '');
     if (!token) throw newError('No token provided', 401);
 
@@ -25,7 +25,7 @@ const checkToken = errorWrapper(async (req, _, next) => {
 
     req.user = user;
     req.token = token;
-    next();
+    return next();
 });
 
-export default checkToken;
+export default auth;
