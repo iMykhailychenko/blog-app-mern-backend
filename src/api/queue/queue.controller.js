@@ -1,4 +1,5 @@
-import { $addLVD, $lookupUser, errorWrapper } from '../../services/helpers';
+import mongoose from 'mongoose';
+import { $addLVD, $lookupUser, $pagination, errorWrapper } from '../../services/helpers';
 import PostModel from '../posts/posts.model';
 
 /*
@@ -7,17 +8,17 @@ import PostModel from '../posts/posts.model';
  * @auth - required
  * */
 export const getQueue = errorWrapper(async (req, res) => {
-    const posts = await PostModel.aggregate([
-        $lookupUser(),
-        $addLVD({ id: req.query.user, view: true, queue: true }),
-        { $sort: { 'feedback.view': -1, 'feedback.like': -1, date: -1 } },
-        { $project: { content: 0, queue: 0, user: 0, __v: 0 } },
-        { $skip: new Date().getDay() },
-        { $limit: 1 },
-    ]);
-    console.log(posts);
+    const page = req.query.page - 1 || 0;
+    const limit = +req.query.limit || 15;
 
-    res.json({});
+    const posts = await PostModel.aggregate([
+        { $match: { queue: mongoose.Types.ObjectId(req.user._id) } },
+        $addLVD({ id: req.user._id, view: true, queue: true }),
+        { $project: { content: 0, user: 0, __v: 0 } },
+        $pagination(page, limit),
+    ]);
+
+    res.json({ posts: posts[0].data, total: posts[0].pagination[0] ? posts[0].pagination[0].total : null });
 });
 
 /*
@@ -26,5 +27,22 @@ export const getQueue = errorWrapper(async (req, res) => {
  * @auth - required
  * */
 export const putQueue = errorWrapper(async (req, res) => {
-    res.status(201).json({});
+    const queue = await PostModel.find({ _id: req.params.postId, queue: req.user._id });
+
+    if (queue.length) {
+        await PostModel.update(
+            { _id: mongoose.Types.ObjectId(req.params.postId) },
+            { $pull: { queue: mongoose.Types.ObjectId(req.user._id) } },
+        );
+
+        res.status(201).json({ queue: 0 });
+        return;
+    }
+
+    await PostModel.update(
+        { _id: mongoose.Types.ObjectId(req.params.postId) },
+        { $push: { queue: mongoose.Types.ObjectId(req.user._id) } },
+    );
+
+    res.status(201).json({ queue: 1 });
 });

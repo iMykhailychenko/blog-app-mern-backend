@@ -6,6 +6,6 @@ import auth from '../../middlewares/auth';
 const router = express.Router();
 
 router.get('/', auth, controller.getQueue);
-router.put('/', auth, controller.putQueue);
+router.put('/:postId', auth, controller.putQueue);
 
 export default router;
