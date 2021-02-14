@@ -40,6 +40,7 @@ const UserSchema = new mongoose.Schema({
         },
     ],
     posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
+    queue: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
 });
 
 UserSchema.static('hashPassword', async password => await bcrypt.hash(password, config.auth.salt));

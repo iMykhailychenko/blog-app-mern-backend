@@ -14,9 +14,13 @@ import UserModel from '../users/users.model';
  * @params {res} - express response obj
  * @params {id} - id of target element
  * */
-const handleLike = async (model, req, res, id) => {
+const handleLike = async (req, res, options) => {
+    const { model, id, view = false, queue = false } = options;
     const getData = async () =>
-        await model.aggregate([{ $match: { _id: mongoose.Types.ObjectId(id) } }, $addLVD(req.user._id)]);
+        await model.aggregate([
+            { $match: { _id: mongoose.Types.ObjectId(id) } },
+            $addLVD({ id: req.user._id, view, queue }),
+        ]);
     const target = await getData();
 
     // stop if no content
@@ -66,9 +70,13 @@ const handleLike = async (model, req, res, id) => {
  * @params {res} - express response obj
  * @params {id} - id of target element
  * */
-const handleDislike = async (model, req, res, id) => {
+const handleDislike = async (req, res, options) => {
+    const { model, id, view = false, queue = false } = options;
     const getData = async () =>
-        await model.aggregate([{ $match: { _id: mongoose.Types.ObjectId(id) } }, $addLVD(req.user._id)]);
+        await model.aggregate([
+            { $match: { _id: mongoose.Types.ObjectId(id) } },
+            $addLVD({ id: req.user._id, view, queue }),
+        ]);
     const target = await getData();
     // stop if no content
     if (!target[0]) throw newError(`No found something with id:${id}`, 404);
@@ -116,7 +124,7 @@ const handleDislike = async (model, req, res, id) => {
  * @params {postId} - post id
  * */
 export const likePost = errorWrapper(async (req, res) => {
-    await handleLike(PostModel, req, res, req.params.postId);
+    await handleLike(req, res, { model: PostModel, id: req.params.postId, view: true, queue: true });
 });
 
 /*
@@ -127,7 +135,7 @@ export const likePost = errorWrapper(async (req, res) => {
  * @params {postId} - post id
  * */
 export const dislikePost = errorWrapper(async (req, res) => {
-    await handleDislike(PostModel, req, res, req.params.postId);
+    await handleDislike(req, res, { model: PostModel, id: req.params.postId, view: true, queue: true });
 });
 
 /*
@@ -138,7 +146,7 @@ export const dislikePost = errorWrapper(async (req, res) => {
  * @params {commentId} - comment id
  * */
 export const likeComment = errorWrapper(async (req, res) => {
-    await handleLike(CommentModel, req, res, req.params.commentId);
+    await handleLike(req, res, { model: CommentModel, id: req.params.commentId });
 });
 
 /*
@@ -149,7 +157,7 @@ export const likeComment = errorWrapper(async (req, res) => {
  * @params {commentId} - comment id
  * */
 export const dislikeComment = errorWrapper(async (req, res) => {
-    await handleDislike(CommentModel, req, res, req.params.commentId);
+    await handleDislike(req, res, { model: CommentModel, id: req.params.commentId });
 });
 
 /*
@@ -160,7 +168,7 @@ export const dislikeComment = errorWrapper(async (req, res) => {
  * @params {userId} - user id
  * */
 export const likeUser = errorWrapper(async (req, res) => {
-    await handleLike(UserModel, req, res, req.params.userId);
+    await handleLike(req, res, { model: UserModel, id: req.params.userId, queue: true });
 });
 
 /*
@@ -171,5 +179,5 @@ export const likeUser = errorWrapper(async (req, res) => {
  * @params {userId} - user id
  * */
 export const dislikeUser = errorWrapper(async (req, res) => {
-    await handleDislike(UserModel, req, res, req.params.userId);
+    await handleDislike(req, res, { model: UserModel, id: req.params.userId, queue: true });
 });

@@ -6,7 +6,6 @@ const router = express.Router();
 
 // posts
 router.get('/posts', controller.getTrendingPosts);
-
 // tags
 router.get('/tags', controller.getTrendingTags);
 

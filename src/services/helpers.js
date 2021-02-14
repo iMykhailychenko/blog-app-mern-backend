@@ -46,7 +46,7 @@ export const updateUserStatic = file => {
 };
 
 // AGGREGATION HELPERS
-export const $addLVD = (id, view = true) => {
+export const $addLVD = ({ id, view = false, queue = false }) => {
     const $addFields = {
         // count elements
         'feedback.like': { $size: '$feedback.like' },
@@ -69,6 +69,14 @@ export const $addLVD = (id, view = true) => {
         $addFields['feedback.isViewed'] = {
             $size: {
                 $setIntersection: ['$feedback.view', [mongoose.Types.ObjectId(id) || null]],
+            },
+        };
+    }
+
+    if (queue) {
+        $addFields.queue = {
+            $size: {
+                $setIntersection: ['$queue', [mongoose.Types.ObjectId(id) || null]],
             },
         };
     }

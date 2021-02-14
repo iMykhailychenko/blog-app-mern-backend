@@ -38,12 +38,13 @@ export const getUserById = errorWrapper(async (req, res) => {
                 as: 'following',
             },
         },
-        $addLVD(req.params.userId, false),
+        $addLVD({ id: req.params.userId, queue: true }),
         {
             $project: {
                 posts: 0,
                 tokens: 0,
                 password: 0,
+                queue: 0,
                 __v: 0,
                 'followers.posts': 0,
                 'followers.tokens': 0,
@@ -109,6 +110,7 @@ const $searchPipeline = (type, user, page, limit) => [
         $project: {
             posts: 0,
             feedback: 0,
+            queue: 0,
             tokens: 0,
             password: 0,
             followers: 0,

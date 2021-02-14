@@ -13,6 +13,7 @@ import comments from './api/comments/comments.router';
 import feedback from './api/feedback/feedback.router';
 import settings from './api/settings/settings.router';
 import trending from './api/trending/trending.router';
+import queue from './api/queue/queue.router';
 
 const app = express();
 const PORT = config.port;
@@ -37,6 +38,7 @@ async function main() {
     app.use('/api/feedback/', feedback);
     app.use('/api/settings/', settings);
     app.use('/api/trending/', trending);
+    app.use('/api/queue/', queue);
 
     // run server
     app.listen(PORT, () => console.log('Run on port:', PORT));
