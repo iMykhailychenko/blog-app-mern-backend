@@ -24,7 +24,7 @@ export const getPosts = errorWrapper(async (req, res) => {
 
     let pipeline = [
         $lookupUser(),
-        $addLVD({ id: req.query.user, view: true, queue: true }),
+        $addLVD({ id: req.user && req.user._id, view: true, queue: true }),
         { $sort: { 'feedback.view': -1, 'feedback.like': -1 } },
         { $project: { content: 0, user: 0, __v: 0 } },
         $pagination(page, limit),
@@ -65,7 +65,7 @@ export const getUserPosts = errorWrapper(async (req, res) => {
 
     const posts = await PostModel.aggregate([
         { $match: { user: mongoose.Types.ObjectId(req.params.userId) } },
-        $addLVD({ id: req.params.userId, view: true, queue: true }),
+        $addLVD({ id: req.user && req.user._id, view: true, queue: true }),
         { $project: { content: 0, user: 0, __v: 0 } },
         { $sort: { date: -1 } },
         $pagination(page, limit),
@@ -111,14 +111,14 @@ export const getSinglePosts = errorWrapper(async (req, res) => {
     const posts = await PostModel.aggregate([
         { $match: { _id: mongoose.Types.ObjectId(req.params.postId) } },
         $lookupUser(),
-        $addLVD({ id: req.query.user, view: true, queue: true }),
+        $addLVD({ id: req.user && req.user._id, view: true, queue: true }),
         { $project: { user: 0, __v: 0 } },
     ]);
 
-    if (req.query.user && posts[0] && !posts[0].feedback.isViewed) {
+    if (req.user && req.user._id && posts[0] && !posts[0].feedback.isViewed) {
         await PostModel.update(
             { _id: mongoose.Types.ObjectId(req.params.postId) },
-            { $push: { 'feedback.view': mongoose.Types.ObjectId(req.query.user) } },
+            { $push: { 'feedback.view': mongoose.Types.ObjectId(req.user && req.user._id) } },
         );
     }
 

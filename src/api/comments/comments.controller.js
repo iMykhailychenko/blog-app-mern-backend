@@ -30,7 +30,7 @@ export const getComments = errorWrapper(async (req, res) => {
                 pipeline: [
                     { $match: { $expr: { $eq: ['$parent', '$$id'] } } },
                     $lookupUser(),
-                    $addLVD({ id: req.query.user }),
+                    $addLVD({ id: req.user && req.user._id }),
                     { $sort: { date: -1 } },
                     { $project: { posts: 0, tokens: 0, password: 0, comments: 0, __v: 0 } },
                 ],
@@ -38,9 +38,8 @@ export const getComments = errorWrapper(async (req, res) => {
             },
         },
         { $match: { parent: null } },
-        $addLVD({ id: req.query.user }),
+        $addLVD({ id: req.user && req.user._id }),
         { $project: { user: 0, __v: 0 } },
-        { $sort: { date: -1 } },
         $pagination(page, limit),
     ]);
 
