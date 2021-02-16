@@ -45,7 +45,10 @@ export const getPosts = errorWrapper(async (req, res) => {
         ];
 
     const posts = await PostModel.aggregate(pipeline);
-    res.json({ posts: posts[0].data, total: posts[0].pagination[0] ? posts[0].pagination[0].total : null });
+    res.json({
+        posts: posts[0].data,
+        total: posts[0].pagination[0] ? Math.ceil(posts[0].pagination[0].total / limit) : 1,
+    });
 });
 
 /*
@@ -71,7 +74,10 @@ export const getUserPosts = errorWrapper(async (req, res) => {
         $pagination(page, limit),
     ]);
 
-    res.json({ posts: posts[0].data, total: posts[0].pagination[0].total });
+    res.json({
+        posts: posts[0].data,
+        total: posts[0].pagination[0] ? Math.ceil(posts[0].pagination[0].total / limit) : 1,
+    });
 });
 
 /*

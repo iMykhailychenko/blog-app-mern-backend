@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { $addLVD, $lookupUser, $pagination, errorWrapper } from '../../services/helpers';
+import { $addLVD, $pagination, errorWrapper } from '../../services/helpers';
 import PostModel from '../posts/posts.model';
 
 /*
@@ -18,7 +18,10 @@ export const getQueue = errorWrapper(async (req, res) => {
         $pagination(page, limit),
     ]);
 
-    res.json({ posts: posts[0].data, total: posts[0].pagination[0] ? posts[0].pagination[0].total : null });
+    res.json({
+        posts: posts[0].data,
+        total: posts[0].pagination[0] ? Math.ceil(posts[0].pagination[0].total / limit) : 1,
+    });
 });
 
 /*
