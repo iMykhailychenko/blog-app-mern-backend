@@ -105,7 +105,7 @@ export const putFollowers = errorWrapper(async (req, res) => {
  * @param limit - limit for pagination
  * */
 const $searchPipeline = (type, user, page, limit) => [
-    { $match: { [type]: user } },
+    { $match: { [type]: mongoose.Types.ObjectId(user) } },
     {
         $project: {
             posts: 0,
@@ -158,7 +158,10 @@ export const searchFollowers = errorWrapper(async (req, res) => {
     if (req.query.q) pipeline = [...$searchQuery(req.query.q), ...pipeline];
 
     const followers = await UserModel.aggregate(pipeline);
-    res.json(followers[0]);
+    res.json({
+        users: followers[0].data,
+        total: followers[0].pagination[0] ? Math.ceil(followers[0].pagination[0].total / limit) : 1,
+    });
 });
 
 /*
@@ -180,5 +183,8 @@ export const searchFollowing = errorWrapper(async (req, res) => {
     if (req.query.q) pipeline = [...$searchQuery(req.query.q), ...pipeline];
 
     const following = await UserModel.aggregate(pipeline);
-    res.json(following[0]);
+    res.json({
+        users: following[0].data,
+        total: following[0].pagination[0] ? Math.ceil(following[0].pagination[0].total / limit) : 1,
+    });
 });

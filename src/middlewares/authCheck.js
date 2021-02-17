@@ -17,6 +17,12 @@ const authCheck = errorWrapper(async (req, _, next) => {
     const currentToken = user.tokens.find(data => data.token === token);
     if (!currentToken) return next();
 
+    if (new Date() > new Date(currentToken.expires)) {
+        user.tokens = user.tokens.filter(data => data.token !== token);
+        await user.save();
+        return next();
+    }
+
     req.user = user;
     return next();
 });
