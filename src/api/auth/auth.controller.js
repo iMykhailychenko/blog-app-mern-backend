@@ -2,6 +2,17 @@ import bcrypt from 'bcrypt';
 import UserModel from '../users/users.model';
 import { errorWrapper, newError } from '../../services/helpers';
 
+/*
+ * @POST
+ * @desc registration
+ * @auth - not required
+ *
+ * @body {password} - password
+ * @body {email} - unique email
+ * @body {name} - name
+ * @body {surname} - surname
+ * @body {avatar} - avatar / sting or null
+ * */
 export const registration = errorWrapper(async (req, res) => {
     const { password, email, name, surname, avatar } = req.body;
 
@@ -14,6 +25,15 @@ export const registration = errorWrapper(async (req, res) => {
     res.status(201).json({ name, surname, nick, email, avatar });
 });
 
+/*
+ * @POST
+ * @desc registration
+ * @auth - not required
+ *
+ * @body {password} - password
+ * @body {email} - unique email
+ * @body {remember} - boolean to delay token expiration
+ * */
 export const login = errorWrapper(async (req, res) => {
     const { email, password, remember } = req.body;
 
@@ -25,7 +45,7 @@ export const login = errorWrapper(async (req, res) => {
 
     const token = await user.createToken(remember);
 
-    res.status(200).json({
+    res.json({
         token,
         user: {
             _id: user._id,
@@ -38,9 +58,20 @@ export const login = errorWrapper(async (req, res) => {
     });
 });
 
+/*
+ * @POST
+ * @desc registration
+ * @auth - required
+ *
+ * */
 export const logout = errorWrapper(async (req, res) => {
     const { token, user } = req;
     user.tokens = user.tokens.filter(data => data.token !== token);
     await user.save();
     res.status(204).send();
+});
+
+export const google = errorWrapper(async (req, res) => {
+    console.log(req);
+    res.send({});
 });
