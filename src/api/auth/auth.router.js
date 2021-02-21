@@ -8,6 +8,7 @@ const router = express.Router();
 router.post('/register', authValidate, controller.registration);
 router.post('/login', controller.login);
 router.post('/logout', auth, controller.logout);
-router.post('/google', auth, controller.google);
+router.get('/google/url', controller.googleUrl);
+router.get('/google', controller.google);
 
 export default router;

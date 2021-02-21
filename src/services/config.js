@@ -4,7 +4,23 @@ import multer from 'multer';
 dotenv.config();
 
 const config = {
+    dev: {
+        back: 'http://localhost:5000',
+        front: 'http://localhost:5050',
+    },
+    prod: {
+        back: 'https://ihor-blog.herokuapp.com',
+        front: 'https://blog-eta-teal.vercel.app',
+    },
     port: process.env.PORT || 5000,
+    google: {
+        client: {
+            id: process.env.GOOGLE_CLIENT_ID,
+            secret: process.env.GOOGLE_CLIENT_SECRET,
+        },
+        url: 'https://oauth2.googleapis.com/token',
+        scope: ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email'],
+    },
     db: {
         url: process.env.DB_URL,
     },

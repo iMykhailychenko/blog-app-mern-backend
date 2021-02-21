@@ -1,6 +1,11 @@
+import axios from 'axios';
 import bcrypt from 'bcrypt';
+import mongoose from 'mongoose';
+import * as querystring from 'querystring';
+
 import UserModel from '../users/users.model';
 import { errorWrapper, newError } from '../../services/helpers';
+import config from '../../services/config';
 
 /*
  * @POST
@@ -36,6 +41,7 @@ export const registration = errorWrapper(async (req, res) => {
  * */
 export const login = errorWrapper(async (req, res) => {
     const { email, password, remember } = req.body;
+    if (!password || !email) throw newError('Wrong email or password', 400);
 
     const user = await UserModel.findOne({ email });
     if (!user) throw newError('Wrong email or password', 400);
@@ -71,7 +77,76 @@ export const logout = errorWrapper(async (req, res) => {
     res.status(204).send();
 });
 
+/*
+ * @GET
+ * @desc google registration redirect
+ * @auth - not required
+ *
+ * */
+export const googleUrl = errorWrapper(async (req, res) => {
+    const options = {
+        redirect_uri: `${config.dev.back}/api/auth/google`,
+        client_id: config.google.client.id,
+        access_type: 'offline',
+        response_type: 'code',
+        prompt: 'consent',
+        scope: config.google.scope.join(' '),
+    };
+    res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${querystring.stringify(options)}`);
+});
+
+/*
+ * @GET
+ * @desc registration or login user with data from google
+ * @auth - not required
+ *
+ * */
 export const google = errorWrapper(async (req, res) => {
-    console.log(req);
-    res.send({});
+    const values = {
+        code: req.query.code,
+        client_id: config.google.client.id,
+        client_secret: config.google.client.secret,
+        redirect_uri: `${config.dev.back}/api/auth/google`,
+        grant_type: 'authorization_code',
+    };
+
+    // get google token
+    const tokens = await axios.post('https://oauth2.googleapis.com/token', querystring.stringify(values), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+
+    // get user by token
+    const googleUser = await axios.get(
+        `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${tokens.data.access_token}`,
+        {
+            headers: {
+                Authorization: `Bearer ${tokens.data.id_token}`,
+            },
+        },
+    );
+
+    // check if user with such id exist
+    let user = await UserModel.findOne({ googleId: googleUser.data.id }, '_id');
+
+    // create user if not exist
+    if (!user) {
+        const { id, email, given_name, family_name, picture } = googleUser.data;
+        const nick = email.split('@')[0];
+
+        // create user
+        await UserModel.create({
+            nick,
+            email,
+            googleId: id,
+            avatar: picture,
+            name: given_name,
+            surname: family_name,
+        });
+
+        // check if user have been created
+        user = await UserModel.findOne({ googleId: googleUser.data.id }, '_id');
+    }
+
+    const token = await user.createToken(true);
+    res.redirect(`${config.dev.front}/?${querystring.stringify({ user: user._id.toString(), token })}`);
 });

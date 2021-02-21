@@ -6,6 +6,7 @@ import { newError } from '../../services/helpers';
 import config from '../../services/config';
 
 const UserSchema = new mongoose.Schema({
+    googleId: { type: String, default: null },
     name: { type: String, required: true },
     surname: { type: String, required: true },
     nick: { type: String, required: true },
@@ -32,7 +33,7 @@ const UserSchema = new mongoose.Schema({
             },
         },
     },
-    password: { type: String, required: true },
+    password: { type: String, default: null },
     tokens: [
         {
             token: { type: String, required: true },
@@ -43,7 +44,10 @@ const UserSchema = new mongoose.Schema({
     queue: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
 });
 
-UserSchema.static('hashPassword', async password => await bcrypt.hash(password, config.auth.salt));
+UserSchema.static('hashPassword', async password => {
+    if (!password) return null;
+    return await bcrypt.hash(password, config.auth.salt);
+});
 
 UserSchema.method('isPasswordValid', async function(password) {
     return await bcrypt.compare(password, this.password);
@@ -52,7 +56,7 @@ UserSchema.method('isPasswordValid', async function(password) {
 UserSchema.method('createToken', async function(remember = false) {
     const token = await jwt.sign({ id: this._id }, config.auth.accessKey);
     this.tokens = [
-        ...this.tokens,
+        ...(this.tokens || []),
         {
             token,
             expires: new Date().getTime() + (remember ? 7 : 1) * 24 * 60 * 60 * 1000,
