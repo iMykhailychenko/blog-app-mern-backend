@@ -85,7 +85,7 @@ export const logout = errorWrapper(async (req, res) => {
  * */
 export const googleUrl = errorWrapper(async (req, res) => {
     const options = {
-        redirect_uri: `${config.dev.back}/api/auth/google`,
+        redirect_uri: `${config.prod.back}/api/auth/google`,
         client_id: config.google.client.id,
         access_type: 'offline',
         response_type: 'code',
@@ -106,7 +106,7 @@ export const google = errorWrapper(async (req, res) => {
         code: req.query.code,
         client_id: config.google.client.id,
         client_secret: config.google.client.secret,
-        redirect_uri: `${config.dev.back}/api/auth/google`,
+        redirect_uri: `${config.prod.back}/api/auth/google`,
         grant_type: 'authorization_code',
     };
 
