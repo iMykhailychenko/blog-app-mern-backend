@@ -1,6 +1,5 @@
 import axios from 'axios';
 import bcrypt from 'bcrypt';
-import mongoose from 'mongoose';
 import * as querystring from 'querystring';
 
 import UserModel from '../users/users.model';
