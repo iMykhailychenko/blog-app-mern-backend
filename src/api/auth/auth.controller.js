@@ -148,5 +148,5 @@ export const google = errorWrapper(async (req, res) => {
     }
 
     const token = await user.createToken(true);
-    res.redirect(`${config.dev.front}/?${querystring.stringify({ user: user._id.toString(), token })}`);
+    res.redirect(`${config.prod.front}/?${querystring.stringify({ user: user._id.toString(), token })}`);
 });
