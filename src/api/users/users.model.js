@@ -7,6 +7,7 @@ import config from '../../services/config';
 
 const UserSchema = new mongoose.Schema({
     googleId: { type: String, default: null },
+    facebookId: { type: String, default: null },
     name: { type: String, required: true },
     surname: { type: String, required: true },
     nick: { type: String, required: true },

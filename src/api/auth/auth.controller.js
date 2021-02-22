@@ -83,15 +83,16 @@ export const logout = errorWrapper(async (req, res) => {
  *
  * */
 export const googleUrl = errorWrapper(async (req, res) => {
-    const options = {
-        redirect_uri: `${config.prod.back}/api/auth/google`,
-        client_id: config.google.client.id,
-        access_type: 'offline',
-        response_type: 'code',
-        prompt: 'consent',
-        scope: config.google.scope.join(' '),
-    };
-    res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${querystring.stringify(options)}`);
+    res.redirect(
+        `https://accounts.google.com/o/oauth2/v2/auth?${querystring.stringify({
+            redirect_uri: `${config.prod.back}/api/auth/google`,
+            client_id: config.google.client.id,
+            access_type: 'offline',
+            response_type: 'code',
+            prompt: 'consent',
+            scope: config.google.scope.join(' '),
+        })}`,
+    );
 });
 
 /*
@@ -101,28 +102,23 @@ export const googleUrl = errorWrapper(async (req, res) => {
  *
  * */
 export const google = errorWrapper(async (req, res) => {
-    const values = {
-        code: req.query.code,
-        client_id: config.google.client.id,
-        client_secret: config.google.client.secret,
-        redirect_uri: `${config.prod.back}/api/auth/google`,
-        grant_type: 'authorization_code',
-    };
-
     // get google token
-    const tokens = await axios.post('https://oauth2.googleapis.com/token', querystring.stringify(values), {
+    const tokens = await axios.post('https://oauth2.googleapis.com/token', {
+        params: {
+            code: req.query.code,
+            client_id: config.google.client.id,
+            client_secret: config.google.client.secret,
+            redirect_uri: `${config.prod.back}/api/auth/google`,
+            grant_type: 'authorization_code',
+        },
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
 
     // get user by token
-    const googleUser = await axios.get(
-        `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${tokens.data.access_token}`,
-        {
-            headers: {
-                Authorization: `Bearer ${tokens.data.id_token}`,
-            },
-        },
-    );
+    const googleUser = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', {
+        params: { alt: 'json', access_token: tokens.data.access_token },
+        headers: { Authorization: `Bearer ${tokens.data.id_token}` },
+    });
 
     // check if user with such id exist
     let user = await UserModel.findOne({ googleId: googleUser.data.id }, '_id');
@@ -132,20 +128,97 @@ export const google = errorWrapper(async (req, res) => {
         const { id, email, given_name, family_name, picture } = googleUser.data;
         const nick = email.split('@')[0];
 
-        // create user
-        await UserModel.create({
-            nick,
-            email,
-            googleId: id,
-            avatar: picture,
-            name: given_name,
-            surname: family_name,
-        });
+        // try catch in case we have user with such email
+        try {
+            // create user
+            await UserModel.create({
+                nick,
+                email,
+                googleId: id,
+                avatar: picture,
+                name: given_name,
+                surname: family_name,
+            });
 
-        // check if user have been created
-        user = await UserModel.findOne({ googleId: googleUser.data.id }, '_id');
+            // check if user have been created
+            user = await UserModel.findOne({ googleId: id }, '_id');
+        } catch (error) {
+            throw new Error(error);
+        }
     }
 
     const token = await user.createToken(true);
     res.redirect(`${config.prod.front}/?${querystring.stringify({ user: user._id.toString(), token })}`);
+});
+
+/*
+ * @GET
+ * @desc facebook registration redirect
+ * @auth - not required
+ *
+ * */
+export const facebookUrl = errorWrapper(async (req, res) => {
+    res.redirect(
+        `https://www.facebook.com/v9.0/dialog/oauth?${querystring.stringify({
+            redirect_uri: `${config.dev.back}/api/auth/facebook`,
+            client_id: config.facebook.client.id,
+            response_type: 'code',
+            auth_type: 'rerequest',
+            scope: config.facebook.scope.join(' '),
+        })}`,
+    );
+});
+
+/*
+ * @GET
+ * @desc registration or login user with data from facebook
+ * @auth - not required
+ *
+ * */
+export const facebook = errorWrapper(async (req, res) => {
+    // get facebook token
+    const tokens = await axios.get('https://graph.facebook.com/v9.0/oauth/access_token', {
+        params: {
+            code: req.query.code,
+            client_id: config.facebook.client.id,
+            client_secret: config.facebook.client.secret,
+            redirect_uri: `${config.dev.back}/api/auth/facebook`,
+        },
+    });
+
+    // get user by token
+    const facebookUser = await axios.get('https://graph.facebook.com/me', {
+        params: { access_token: tokens.data.access_token, fields: 'id,email,first_name,last_name,picture' },
+    });
+
+    // check if user with such id exist
+    let user = await UserModel.findOne({ facebookId: facebookUser.data.id }, '_id');
+
+    // create user if not exist
+    if (!user) {
+        const { id, email, first_name, last_name, picture } = facebookUser.data;
+        console.log({ id, email, first_name, last_name, picture });
+        const nick = email.split('@')[0];
+
+        // try catch in case we have user with such email
+        try {
+            // create user
+            await UserModel.create({
+                nick,
+                email,
+                facebookId: id,
+                avatar: (picture && picture.data && picture.data.url) || null,
+                name: first_name,
+                surname: last_name,
+            });
+
+            // check if user have been created
+            user = await UserModel.findOne({ facebookId: id }, '_id');
+        } catch (error) {
+            throw new Error(error);
+        }
+    }
+
+    const token = await user.createToken(true);
+    res.redirect(`${config.dev.front}/?${querystring.stringify({ user: user._id.toString(), token })}`);
 });

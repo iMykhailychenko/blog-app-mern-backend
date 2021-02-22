@@ -21,6 +21,13 @@ const config = {
         url: 'https://oauth2.googleapis.com/token',
         scope: ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email'],
     },
+    facebook: {
+        client: {
+            id: process.env.FACEBOOK_CLIENT_ID,
+            secret: process.env.FACEBOOK_CLIENT_SECRET,
+        },
+        scope: ['email', 'public_profile'],
+    },
     db: {
         url: process.env.DB_URL,
     },
