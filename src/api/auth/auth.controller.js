@@ -212,7 +212,7 @@ export const facebook = errorWrapper(async (req, res) => {
             // create user
             await UserModel.create({
                 nick,
-                email,
+                email: email || null,
                 facebookId: id,
                 avatar: (picture && picture.data && picture.data.url) || null,
                 name: first_name,
