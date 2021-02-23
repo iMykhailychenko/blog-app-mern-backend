@@ -128,18 +128,24 @@ export const google = errorWrapper(async (req, res) => {
         const { id, email, given_name, family_name, picture } = googleUser.data;
         const nick = email.split('@')[0];
 
-        // create user
-        await UserModel.create({
-            nick,
-            email,
-            googleId: id,
-            avatar: picture,
-            name: given_name,
-            surname: family_name,
-        });
+        // try catch in case we have user with such email
+        try {
+            // create user
+            await UserModel.create({
+                nick,
+                email,
+                googleId: id,
+                avatar: picture,
+                name: given_name,
+                surname: family_name,
+            });
 
-        // check if user have been created
-        user = await UserModel.findOne({ googleId: googleUser.data.id }, '_id');
+            // check if user have been created
+            user = await UserModel.findOne({ googleId: googleUser.data.id }, '_id');
+        } catch (error) {
+            res.redirect(`${config.front}/?${querystring.stringify({ error: error.message })}`);
+            throw new Error(error);
+        }
     }
 
     const token = await user.createToken(true);
@@ -171,6 +177,12 @@ export const facebookUrl = errorWrapper(async (req, res) => {
  *
  * */
 export const facebook = errorWrapper(async (req, res) => {
+    // handle facebook error
+    if (req.query.error_code) {
+        res.redirect(`${config.front}/?${querystring.stringify({ error: req.query.error_message })}`);
+        throw new Error(req.query.error_message);
+    }
+
     // get facebook token
     const tokens = await axios.get('https://graph.facebook.com/v9.0/oauth/access_token', {
         params: {
@@ -183,17 +195,17 @@ export const facebook = errorWrapper(async (req, res) => {
 
     // get user by token
     const facebookUser = await axios.get('https://graph.facebook.com/me', {
-        params: { access_token: tokens.data.access_token, fields: 'id,email,first_name,last_name,picture' },
+        params: { access_token: tokens.data.access_token, fields: 'id,email,first_name,last_name,picture.type(large)' },
     });
 
     // check if user with such id exist
     let user = await UserModel.findOne({ facebookId: facebookUser.data.id }, '_id');
 
     // create user if not exist
+    console.dir(facebookUser.data.picture);
     if (!user) {
         const { id, email, first_name, last_name, picture } = facebookUser.data;
-        console.log({ id, email, first_name, last_name, picture });
-        const nick = email.split('@')[0];
+        const nick = email ? email.split('@')[0] : 'none';
 
         // try catch in case we have user with such email
         try {
@@ -210,6 +222,7 @@ export const facebook = errorWrapper(async (req, res) => {
             // check if user have been created
             user = await UserModel.findOne({ facebookId: id }, '_id');
         } catch (error) {
+            res.redirect(`${config.front}/?${querystring.stringify({ error: error.message })}`);
             throw new Error(error);
         }
     }
