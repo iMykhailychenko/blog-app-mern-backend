@@ -85,7 +85,7 @@ export const logout = errorWrapper(async (req, res) => {
 export const googleUrl = errorWrapper(async (req, res) => {
     res.redirect(
         `https://accounts.google.com/o/oauth2/v2/auth?${querystring.stringify({
-            redirect_uri: `${config.prod.back}/api/auth/google`,
+            redirect_uri: `${config.back}/api/auth/google`,
             client_id: config.google.client.id,
             access_type: 'offline',
             response_type: 'code',
@@ -102,28 +102,23 @@ export const googleUrl = errorWrapper(async (req, res) => {
  *
  * */
 export const google = errorWrapper(async (req, res) => {
-    const values = {
-        code: req.query.code,
-        client_id: config.google.client.id,
-        client_secret: config.google.client.secret,
-        redirect_uri: `${config.prod.back}/api/auth/google`,
-        grant_type: 'authorization_code',
-    };
-
     // get google token
-    const tokens = await axios.post('https://oauth2.googleapis.com/token', querystring.stringify(values), {
+    const tokens = await axios.post('https://oauth2.googleapis.com/token', null, {
+        params: {
+            code: req.query.code,
+            client_id: config.google.client.id,
+            client_secret: config.google.client.secret,
+            redirect_uri: `${config.back}/api/auth/google`,
+            grant_type: 'authorization_code',
+        },
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
 
     // get user by token
-    const googleUser = await axios.get(
-        `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${tokens.data.access_token}`,
-        {
-            headers: {
-                Authorization: `Bearer ${tokens.data.id_token}`,
-            },
-        },
-    );
+    const googleUser = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', {
+        params: { alt: 'json', access_token: tokens.data.access_token },
+        headers: { Authorization: `Bearer ${tokens.data.id_token}` },
+    });
 
     // check if user with such id exist
     let user = await UserModel.findOne({ googleId: googleUser.data.id }, '_id');
@@ -148,7 +143,7 @@ export const google = errorWrapper(async (req, res) => {
     }
 
     const token = await user.createToken(true);
-    res.redirect(`${config.prod.front}/?${querystring.stringify({ user: user._id.toString(), token })}`);
+    res.redirect(`${config.front}/?${querystring.stringify({ user: user._id.toString(), token })}`);
 });
 
 /*
@@ -160,7 +155,7 @@ export const google = errorWrapper(async (req, res) => {
 export const facebookUrl = errorWrapper(async (req, res) => {
     res.redirect(
         `https://www.facebook.com/v9.0/dialog/oauth?${querystring.stringify({
-            redirect_uri: `${config.prod.back}/api/auth/facebook`,
+            redirect_uri: `${config.back}/api/auth/facebook`,
             client_id: config.facebook.client.id,
             response_type: 'code',
             auth_type: 'rerequest',
@@ -182,7 +177,7 @@ export const facebook = errorWrapper(async (req, res) => {
             code: req.query.code,
             client_id: config.facebook.client.id,
             client_secret: config.facebook.client.secret,
-            redirect_uri: `${config.prod.back}/api/auth/facebook`,
+            redirect_uri: `${config.back}/api/auth/facebook`,
         },
     });
 
@@ -220,5 +215,5 @@ export const facebook = errorWrapper(async (req, res) => {
     }
 
     const token = await user.createToken(true);
-    res.redirect(`${config.prod.front}/?${querystring.stringify({ user: user._id.toString(), token })}`);
+    res.redirect(`${config.front}/?${querystring.stringify({ user: user._id.toString(), token })}`);
 });

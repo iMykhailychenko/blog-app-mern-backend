@@ -6,8 +6,8 @@
     "author": "Ihor Mykhailychenko",
     "license": "ISC",
     "scripts": {
-        "start": "node --es-module-specifier-resolution=node ./src/index.js",
-        "dev": "nodemon --es-module-specifier-resolution=node ./src/index.js",
+        "start": "NODE_ENV=prod node --es-module-specifier-resolution=node ./src/index.js",
+        "dev": "NODE_ENV=dev nodemon --es-module-specifier-resolution=node ./src/index.js",
         "lint": "prettier --write './**/*.{js,json}' --config ./.prettierrc && eslint --fix ./",
         "format": "prettier --write './**/*.{js,json}' --config ./.prettierrc"
     },
