@@ -210,14 +210,15 @@ export const facebook = errorWrapper(async (req, res) => {
         // try catch in case we have user with such email
         try {
             // create user
-            await UserModel.create({
+            const values = {
                 nick,
-                email: email || null,
                 facebookId: id,
                 avatar: (picture && picture.data && picture.data.url) || null,
                 name: first_name,
                 surname: last_name,
-            });
+            };
+            if (email) values.email = email;
+            await UserModel.create(values);
 
             // check if user have been created
             user = await UserModel.findOne({ facebookId: id }, '_id');
