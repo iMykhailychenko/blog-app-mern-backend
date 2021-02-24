@@ -38,6 +38,12 @@ export const getUserById = errorWrapper(async (req, res) => {
                 as: 'following',
             },
         },
+        {
+            $addFields: {
+                hasEmail: { $toBool: '$email' },
+                hasPassword: { $toBool: '$password' },
+            },
+        },
         $addLVD({ id: req.params.userId, queue: true }),
         {
             $project: {
