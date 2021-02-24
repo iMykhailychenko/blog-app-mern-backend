@@ -217,7 +217,12 @@ export const facebook = errorWrapper(async (req, res) => {
                 name: first_name,
                 surname: last_name,
             };
-            if (email) values.email = email;
+
+            // if user has email
+            if (email) {
+                values.email = email;
+                values.verified = true;
+            }
             await UserModel.create(values);
 
             // check if user have been created

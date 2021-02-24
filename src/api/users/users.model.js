@@ -20,12 +20,15 @@ const UserSchema = new mongoose.Schema({
         like: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
         dislike: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     },
+    verified: { type: Boolean, default: false },
     email: {
         type: String,
         default: null,
         unique: true,
         validate: {
             validator(email) {
+                if (email === null) return; // for facebook users without email
+
                 const { error } = Joi.string()
                     .email()
                     .validate(email);
