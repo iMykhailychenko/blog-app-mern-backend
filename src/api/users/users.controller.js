@@ -166,6 +166,7 @@ export const searchFollowers = errorWrapper(async (req, res) => {
     const followers = await UserModel.aggregate(pipeline);
     res.json({
         users: followers[0].data,
+        count: followers[0].pagination[0].total,
         total: followers[0].pagination[0] ? Math.ceil(followers[0].pagination[0].total / limit) : 1,
     });
 });
@@ -191,6 +192,7 @@ export const searchFollowing = errorWrapper(async (req, res) => {
     const following = await UserModel.aggregate(pipeline);
     res.json({
         users: following[0].data,
+        count: following[0].pagination[0].total,
         total: following[0].pagination[0] ? Math.ceil(following[0].pagination[0].total / limit) : 1,
     });
 });

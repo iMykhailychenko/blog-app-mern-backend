@@ -45,6 +45,7 @@ export const getComments = errorWrapper(async (req, res) => {
 
     res.json({
         comments: comments[0].data,
+        count: comments[0].pagination[0].total,
         total: comments[0].pagination[0] ? Math.ceil(comments[0].pagination[0].total / limit) : 1,
     });
 });
