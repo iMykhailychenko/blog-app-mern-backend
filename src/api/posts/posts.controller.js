@@ -47,7 +47,7 @@ export const getPosts = errorWrapper(async (req, res) => {
     const posts = await PostModel.aggregate(pipeline);
     res.json({
         posts: posts[0].data,
-        count: posts[0].pagination[0].total,
+        count: posts[0].pagination[0] ? posts[0].pagination[0].total : 0,
         total: posts[0].pagination[0] ? Math.ceil(posts[0].pagination[0].total / limit) : 1,
     });
 });
@@ -77,7 +77,7 @@ export const getUserPosts = errorWrapper(async (req, res) => {
 
     res.json({
         posts: posts[0].data,
-        count: posts[0].pagination[0].total,
+        count: posts[0].pagination[0] ? posts[0].pagination[0].total : 0,
         total: posts[0].pagination[0] ? Math.ceil(posts[0].pagination[0].total / limit) : 1,
     });
 });

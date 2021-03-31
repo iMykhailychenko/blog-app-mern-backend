@@ -166,7 +166,7 @@ export const searchFollowers = errorWrapper(async (req, res) => {
     const followers = await UserModel.aggregate(pipeline);
     res.json({
         users: followers[0].data,
-        count: followers[0].pagination[0].total,
+        count: followers[0].pagination[0] ? followers[0].pagination[0].total : 0,
         total: followers[0].pagination[0] ? Math.ceil(followers[0].pagination[0].total / limit) : 1,
     });
 });
