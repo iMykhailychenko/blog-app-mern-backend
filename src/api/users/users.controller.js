@@ -20,7 +20,7 @@ export const getUser = errorWrapper(async (req, res) => {
  * @params {userId} - user id
  * */
 export const getUserById = errorWrapper(async (req, res) => {
-    const user = await UserModel.aggregate([
+    const pipeline = [
         { $match: { _id: mongoose.Types.ObjectId(req.params.userId) } },
         {
             $lookup: {
@@ -66,8 +66,11 @@ export const getUserById = errorWrapper(async (req, res) => {
                 'following.following': 0,
             },
         },
-    ]);
+    ];
 
+    console.log(req.user._id);
+
+    const user = await UserModel.aggregate(pipeline);
     res.json(user);
 });
 
