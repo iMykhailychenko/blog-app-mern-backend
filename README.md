@@ -23,9 +23,10 @@ This repository is the server part of the application.
 At the moment the backend is on FREE hosting from Heroku.
 Therefore, there may be problems during the first boot, since after 30-40 minutes of inactivity, the site goes into sleep mode.
 Just reload the site a few times.
+```
 
 https://blog-eta-teal.vercel.app
-```
+
 
 
 ## Frontend part repository
