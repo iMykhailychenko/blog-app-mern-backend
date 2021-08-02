@@ -28,11 +28,11 @@ Therefore, there may be problems during the first boot, since after 30-40 minute
 Just reload the site a few times.
 ```
 
-##### The link: 
+## The link: 
 https://blog-eta-teal.vercel.app
 
 
-
+---------------------------
 ## Frontend part repository
 
 https://github.com/iMykhailychenko/blog-app-mern-frontend
